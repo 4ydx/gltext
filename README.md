@@ -1,3 +1,5 @@
+## a 'modern' opengl rewrite of go-gl/gltext
+
 ## gltext
 
 **Note**: This package is experimental and subject to change.
@@ -48,11 +50,11 @@ licenses for more information about the requirements.
 
 ### Usage
 
-    go get github.com/go-gl/gltext
+    go get github.com/4ydx/gltext
 
-Refer to [go-gl/examples/gltext][ex] for usage examples.
+Refer to [4ydx/test_gltext][ex] for usage examples.
 
-[ex]: https://github.com/go-gl/examples/tree/master/gltext
+[ex]: https://github.com/4ydx/test_gltext
 
 
 ### License
