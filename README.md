@@ -6,6 +6,8 @@ There do seem to be issues with the dimensions reported by freetype-go unfortuna
 
 Unicode support is based on the underlying truetype font being used (or bitmap).
 
+![Alt text](/example.png?raw=true "Working Example")
+
 ### TODO
 
 * Have a look at Valve's 'Signed Distance Field` techniques to render
