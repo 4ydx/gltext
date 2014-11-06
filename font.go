@@ -66,6 +66,10 @@ type Font struct {
 	windowWidth    float32
 	windowHeight   float32
 	ortho          mgl32.Mat4
+	vboData        []float32
+	vboIndexCount  int
+	eboData        []int32
+	eboIndexCount  int
 }
 
 func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
@@ -214,42 +218,49 @@ func (f *Font) Release() {
 	f.config = nil
 }
 
-func (f *Font) Printf(x, y float32, fs string, argv ...interface{}) error {
+// x1, x2: the lower left and upper right points of a box that bounds the text
+func (f *Font) SetString(fs string, argv ...interface{}) (x1, x2 Point) {
 	indices := []rune(fmt.Sprintf(fs, argv...))
 	if len(indices) == 0 {
-		return nil
+		return
 	}
 	// ebo, vbo data
-	vboIndexCount := len(indices) * 4 * 2 * 2 // 4 indexes per rune (containing 2 position + 2 texture)
-	eboIndexCount := len(indices) * 6         // each rune requires 6 triangle edges to complete a quad
-	vboData := make([]float32, vboIndexCount, vboIndexCount)
-	eboData := make([]int32, eboIndexCount, eboIndexCount)
-	f.makeData(x, y, indices, vboData, eboData)
+	f.vboIndexCount = len(indices) * 4 * 2 * 2 // 4 indexes per rune (containing 2 position + 2 texture)
+	f.eboIndexCount = len(indices) * 6         // each rune requires 6 triangle indices for a quad
+	f.vboData = make([]float32, f.vboIndexCount, f.vboIndexCount)
+	f.eboData = make([]int32, f.eboIndexCount, f.eboIndexCount)
+	x1, x2 = f.makeBufferData(indices)
 
+	return
+}
+
+func (f *Font) SetPosition(x, y float32) {
+	f.setDataPosition(x, y)
 	if debug {
 		fmt.Printf("ortho matrix\n%v\n", f.ortho)
-		fmt.Printf("vbo data\n%v\n", vboData)
-		fmt.Printf("ebo data\n%v\n", eboData)
+		fmt.Printf("vbo data\n%v\n", f.vboData)
+		fmt.Printf("ebo data\n%v\n", f.eboData)
 	}
-
 	glfloat_size := int32(4)
 
 	// setup context
 	gl.BindVertexArray(f.vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, f.vbo)
 	gl.BufferData(
-		gl.ARRAY_BUFFER, int(glfloat_size)*vboIndexCount, gl.Ptr(vboData), gl.DYNAMIC_DRAW)
+		gl.ARRAY_BUFFER, int(glfloat_size)*f.vboIndexCount, gl.Ptr(f.vboData), gl.DYNAMIC_DRAW)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, f.ebo)
 	gl.BufferData(
-		gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*eboIndexCount, gl.Ptr(eboData), gl.DYNAMIC_DRAW)
+		gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*f.eboIndexCount, gl.Ptr(f.eboData), gl.DYNAMIC_DRAW)
 	gl.BindVertexArray(0)
 	// completed context
 
 	// not necesssary, but i just want to better understand using vertex arrays
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+	return
+}
 
-	// draw
+func (f *Font) Draw() {
 	gl.UseProgram(f.program)
 
 	gl.ActiveTexture(gl.TEXTURE0)
@@ -260,20 +271,72 @@ func (f *Font) Printf(x, y float32, fs string, argv ...interface{}) error {
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	gl.BindVertexArray(f.vao)
-	gl.DrawElements(gl.TRIANGLES, int32(eboIndexCount), gl.UNSIGNED_INT, nil)
+	gl.DrawElements(gl.TRIANGLES, int32(f.eboIndexCount), gl.UNSIGNED_INT, nil)
 	gl.BindVertexArray(0)
 	gl.Disable(gl.BLEND)
-
-	return nil
 }
 
-func (f *Font) makeData(x, y float32, indices []rune, vboData []float32, eboData []int32) {
+func (f *Font) getBoundingBox(vboIndex int, x1, x2 *Point) {
+	// index -4: x, index -3: y, index -2: uv's x, index -1 uv's y
+	x := f.vboData[vboIndex-4]
+	y := f.vboData[vboIndex-3]
+
+	if vboIndex-4 == 0 {
+		x1.X = x
+		x1.Y = y
+	} else {
+		if x < x1.X {
+			x1.X = x
+		}
+		if y < x1.Y {
+			x1.Y = y
+		}
+		if x > x2.X {
+			x2.X = x
+		}
+		if y > x2.Y {
+			x2.Y = y
+		}
+	}
+}
+
+func (f *Font) setDataPosition(x, y float32) {
+	length := len(f.vboData)
+	for index := 0; index < length; {
+		// index (0,0)
+		f.vboData[index] += x
+		index++
+		f.vboData[index] += y
+		index += 3 // skip texture data
+
+		// index (1,0)
+		f.vboData[index] += x
+		index++
+		f.vboData[index] += y
+		index += 3
+
+		// index (1,1)
+		f.vboData[index] += x
+		index++
+		f.vboData[index] += y
+		index += 3
+
+		// index (0,1)
+		f.vboData[index] += x
+		index++
+		f.vboData[index] += y
+		index += 3
+	}
+}
+
+// currently only supports left to right text flow
+func (f *Font) makeBufferData(indices []rune) (x1, x2 Point) {
 	glyphs := f.config.Glyphs
 	low := f.config.Low
 
-	lineX := float32(0)
 	vboIndex := 0
 	eboIndex := 0
+	lineX := float32(0)
 	eboOffset := int32(0)
 	for _, r := range indices {
 		r -= low
@@ -285,65 +348,70 @@ func (f *Font) makeData(x, y float32, indices []rune, vboData []float32, eboData
 			// counter-clockwise quad
 
 			// index (0,0)
-			vboData[vboIndex] = lineX + x // position
+			f.vboData[vboIndex] = lineX // position
 			vboIndex++
-			vboData[vboIndex] = 0 + y
+			f.vboData[vboIndex] = 0
 			vboIndex++
-			vboData[vboIndex] = tP1.X // texture uv
+			f.vboData[vboIndex] = tP1.X // texture uv
 			vboIndex++
-			vboData[vboIndex] = tP2.Y
+			f.vboData[vboIndex] = tP2.Y
 			vboIndex++
+			f.getBoundingBox(vboIndex, &x1, &x2)
 
 			// index (1,0)
-			vboData[vboIndex] = lineX + vw + x
+			f.vboData[vboIndex] = lineX + vw
 			vboIndex++
-			vboData[vboIndex] = 0 + y
+			f.vboData[vboIndex] = 0
 			vboIndex++
-			vboData[vboIndex] = tP2.X
+			f.vboData[vboIndex] = tP2.X
 			vboIndex++
-			vboData[vboIndex] = tP2.Y
+			f.vboData[vboIndex] = tP2.Y
 			vboIndex++
+			f.getBoundingBox(vboIndex, &x1, &x2)
 
 			// index (1,1)
-			vboData[vboIndex] = lineX + vw + x
+			f.vboData[vboIndex] = lineX + vw
 			vboIndex++
-			vboData[vboIndex] = vh + y
+			f.vboData[vboIndex] = vh
 			vboIndex++
-			vboData[vboIndex] = tP2.X
+			f.vboData[vboIndex] = tP2.X
 			vboIndex++
-			vboData[vboIndex] = tP1.Y
+			f.vboData[vboIndex] = tP1.Y
 			vboIndex++
+			f.getBoundingBox(vboIndex, &x1, &x2)
 
 			// index (0,1)
-			vboData[vboIndex] = lineX + x
+			f.vboData[vboIndex] = lineX
 			vboIndex++
-			vboData[vboIndex] = vh + y
+			f.vboData[vboIndex] = vh
 			vboIndex++
-			vboData[vboIndex] = tP1.X
+			f.vboData[vboIndex] = tP1.X
 			vboIndex++
-			vboData[vboIndex] = tP1.Y
+			f.vboData[vboIndex] = tP1.Y
 			vboIndex++
+			f.getBoundingBox(vboIndex, &x1, &x2)
 
 			advance := float32(glyphs[r].Advance)
 			lineX += advance
 
 			// ebo data
-			eboData[eboIndex] = 0 + eboOffset
+			f.eboData[eboIndex] = 0 + eboOffset
 			eboIndex++
-			eboData[eboIndex] = 1 + eboOffset
+			f.eboData[eboIndex] = 1 + eboOffset
 			eboIndex++
-			eboData[eboIndex] = 2 + eboOffset
+			f.eboData[eboIndex] = 2 + eboOffset
 			eboIndex++
 
-			eboData[eboIndex] = 0 + eboOffset
+			f.eboData[eboIndex] = 0 + eboOffset
 			eboIndex++
-			eboData[eboIndex] = 2 + eboOffset
+			f.eboData[eboIndex] = 2 + eboOffset
 			eboIndex++
-			eboData[eboIndex] = 3 + eboOffset
+			f.eboData[eboIndex] = 3 + eboOffset
 			eboIndex++
 			eboOffset += 4
 		}
 	}
+	return
 }
 
 // GlyphBounds returns the largest width and height for any of the glyphs
