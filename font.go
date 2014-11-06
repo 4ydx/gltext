@@ -53,7 +53,6 @@ type Font struct {
 	maxGlyphWidth  int         // Largest glyph width.
 	maxGlyphHeight int         // Largest glyph height.
 	program        uint32      // program compiled from shaders
-	vboSize        int32
 	position       uint32
 	uv             uint32
 	fragmentTexure int32
@@ -130,7 +129,6 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 
 	// create shader program and define attributes and uniforms
-	f.vboSize = 0
 	f.program, err = newProgram(vertexShaderSource, fragmentShaderSource)
 	if err != nil {
 		return f, err
