@@ -10,8 +10,9 @@ Unicode support is based on the underlying truetype font being used (or bitmap).
 
 ### Example
 
-go get github.com/4ydx/gltext
-Refer to [4ydx/test_gltext][ex] an example.
+* go get github.com/4ydx/gltext
+
+* Refer to [4ydx/test_gltext][ex] an example.
 
 ### TODO
 
