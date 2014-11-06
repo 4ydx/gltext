@@ -1,18 +1,10 @@
 ## a 'modern' opengl rewrite of go-gl/gltext
 
-## gltext
+A simple package for rendering a string using modern opengl.  Based on the bounding
+box of a string, positioning of the string on screen prior to rendering is possible.
+There do seem to be issues with the dimensions reported by freetype-go unfortunately.
 
-**Note**: This package is experimental and subject to change.
-Use at your own discretion.
-
-The gltext package offers a simple set of text rendering utilities for OpenGL
-programs. It deals with TrueType and Bitmap (raster) fonts. Text can be
-rendered in various directions (Left-to-right, right-to-left and top-to-bottom).
-This allows for correct display of text for various languages.
-
-The package supports the full set of unicode characters, provided the loaded
-font does as well.
-
+Unicode support is based on the underlying truetype font being used (or bitmap).
 
 ### TODO
 
