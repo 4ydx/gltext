@@ -12,7 +12,7 @@ Unicode support is based on the underlying truetype font being used (or bitmap).
 
 * go get github.com/4ydx/gltext
 
-* Refer to [4ydx/gltext_test][ex] an example.
+* Refer to [/4ydx/gltext_example][ex] an example.
 
 ### TODO
 
