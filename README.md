@@ -6,11 +6,13 @@ There do seem to be issues with the dimensions reported by freetype-go unfortuna
 
 Unicode support is based on the underlying truetype font being used (or bitmap).
 
-![Alt text](/example.png?raw=true "Working Example")
+![Alt text](/example.png?raw=true "Simple Screenshot")
 
-### Example
+### Install
 
 * go get github.com/4ydx/gltext
+
+### Example
 
 * Refer to https://github.com/4ydx/gltext_example as an example.
 
