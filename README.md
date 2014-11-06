@@ -8,6 +8,11 @@ Unicode support is based on the underlying truetype font being used (or bitmap).
 
 ![Alt text](/example.png?raw=true "Working Example")
 
+### Example
+
+go get github.com/4ydx/gltext
+Refer to [4ydx/test_gltext][ex] an example.
+
 ### TODO
 
 * Have a look at Valve's 'Signed Distance Field` techniques to render
@@ -41,15 +46,6 @@ use case but FTL requires you to give some form of credit to Freetype.org
 You can read the [GPLv2](https://code.google.com/p/freetype-go/source/browse/licenses/gpl.txt)
 and [FTL](https://code.google.com/p/freetype-go/source/browse/licenses/ftl.txt)
 licenses for more information about the requirements.
-
-### Usage
-
-    go get github.com/4ydx/gltext
-
-Refer to [4ydx/test_gltext][ex] for usage examples.
-
-[ex]: https://github.com/4ydx/test_gltext
-
 
 ### License
 
