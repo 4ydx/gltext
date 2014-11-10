@@ -36,44 +36,73 @@ var fragmentShaderSource string = `
 #version 330
 
 uniform sampler2D fragment_texture;
+uniform float text_lowerbound;
+uniform vec4 fragment_color_adjustment;
 
 in vec2 fragment_uv;
 out vec4 fragment_color;
 
 void main() {
-  vec4 color     = texture(fragment_texture, fragment_uv);
-  color.a        = max(color.a, 0.4);
+  vec4 color = texture(fragment_texture, fragment_uv);
+  if(color.x > text_lowerbound && color.y > text_lowerbound && color.z > text_lowerbound) {
+    color   = color - vec4(fragment_color_adjustment.xyz, 0.0);
+    color.a = fragment_color_adjustment.w;
+
+    // it appears that the fragment color's background is black.
+    // if we subtract (0,0,0) - (1,1,1) we end up with negative
+    // numbers so we have to translate back into an acceptable range.
+    color   = abs(color);
+  } else {
+    // if we dont appear to be working on a fragment inside
+    // a piece of text, make this completely opaque to accept
+    // whatever the user has set in the background.
+    color = vec4(0,0,0,0);
+  }
   fragment_color = color;
 }
 ` + "\x00"
 
 type Font struct {
-	config         *FontConfig // Character set for this font.
-	textureID      uint32      // Holds the glyph texture id.
-	maxGlyphWidth  int         // Largest glyph width.
-	maxGlyphHeight int         // Largest glyph height.
-	program        uint32      // program compiled from shaders
-	position       uint32
-	uv             uint32
-	fragmentTexure int32
-	glMatrix       int32
-	vao            uint32
-	vbo            uint32
-	ebo            uint32
-	textureWidth   float32
-	textureHeight  float32
-	windowWidth    float32
-	windowHeight   float32
-	ortho          mgl32.Mat4
-	vboData        []float32
-	vboIndexCount  int
-	eboData        []int32
-	eboIndexCount  int
+	config                 *FontConfig // Character set for this font.
+	textureID              uint32      // Holds the glyph texture id.
+	maxGlyphWidth          int         // Largest glyph width.
+	maxGlyphHeight         int         // Largest glyph height.
+	program                uint32      // program compiled from shaders
+	position               uint32      // Position of the shaders 'position' variable
+	uv                     uint32      // Position of the shaders uv variable
+	fragmentTextureUniform int32       // Position of the shaders fragment texture variable
+
+	// The desired color of the text
+	colorUniform int32
+	color        mgl32.Vec4
+
+	// The fragment shader currently attempts to enable complete opacity
+	// on fragments that don't appear to be apart of the text ie any
+	// non color(0,0,0) fragments.  The lower bound can be adjusted, but
+	// will tend to make the text narrower.  I'm not sure how to improve
+	// this code so that backgrounds in the bitmap can be completely opaque.
+	textLowerBoundUniform int32
+	textLowerBound        float32
+
+	glMatrix      int32
+	vao           uint32
+	vbo           uint32
+	ebo           uint32
+	textureWidth  float32
+	textureHeight float32
+	windowWidth   float32
+	windowHeight  float32
+	ortho         mgl32.Mat4
+	vboData       []float32
+	vboIndexCount int
+	eboData       []int32
+	eboIndexCount int
 }
 
 func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f = new(Font)
 	f.config = config
+	f.textLowerBound = 0.1
 
 	// Resize image to next power-of-two.
 	img = Pow2Image(img).(*image.RGBA)
@@ -137,7 +166,9 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f.glMatrix = gl.GetUniformLocation(f.program, gl.Str("matrix\x00"))
 	f.position = uint32(gl.GetAttribLocation(f.program, gl.Str("position\x00")))
 	f.uv = uint32(gl.GetAttribLocation(f.program, gl.Str("uv\x00")))
-	f.fragmentTexure = gl.GetUniformLocation(f.program, gl.Str("fragment_texture\x00"))
+	f.fragmentTextureUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_texture\x00"))
+	f.colorUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_color_adjustment\x00"))
+	f.textLowerBoundUniform = gl.GetUniformLocation(f.program, gl.Str("text_lowerbound\x00"))
 
 	// size of glfloat
 	glfloat_size := int32(4)
@@ -216,6 +247,17 @@ func (f *Font) Release() {
 	f.config = nil
 }
 
+func (f *Font) SetColor(r, g, b, a float32) {
+	// the img representing fonts defaults to white so we have to invert the requested values
+	// eg if the user selects (1,1,1) they want a white image which means the underlying texture
+	//    does not need to change
+	f.color = mgl32.Vec4{1.0 - r, 1.0 - g, 1.0 - b, a}
+}
+
+func (f *Font) SetTextLowerBound(v float32) {
+	f.textLowerBound = v
+}
+
 // x1, x2: the lower left and upper right points of a box that bounds the text
 func (f *Font) SetString(fs string, argv ...interface{}) (x1, x2 Point) {
 	indices := []rune(fmt.Sprintf(fs, argv...))
@@ -263,7 +305,9 @@ func (f *Font) Draw() {
 
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, f.textureID)
-	gl.Uniform1i(f.fragmentTexure, 0)
+	gl.Uniform1i(f.fragmentTextureUniform, 0)
+	gl.Uniform1f(f.textLowerBoundUniform, f.textLowerBound)
+	gl.Uniform4fv(f.colorUniform, 1, &f.color[0])
 	gl.UniformMatrix4fv(f.glMatrix, 1, false, &f.ortho[0])
 
 	gl.Enable(gl.BLEND)
