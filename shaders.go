@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
+func NewProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
 	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
 	if err != nil {
 		return 0, err

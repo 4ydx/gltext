@@ -150,7 +150,7 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 
 	// create shader program and define attributes and uniforms
-	f.program, err = newProgram(vertexShaderSource, fragmentShaderSource)
+	f.program, err = NewProgram(vertexShaderSource, fragmentShaderSource)
 	if err != nil {
 		return f, err
 	}
@@ -358,6 +358,11 @@ func (f *Font) setDataPosition(x, y float32) {
 		f.vboData[index] += y
 		index += 3
 	}
+	// update screen position
+	f.X1.X += x
+	f.X2.X += x
+	f.X1.Y += y
+	f.X2.Y += y
 }
 
 // currently only supports left to right text flow
