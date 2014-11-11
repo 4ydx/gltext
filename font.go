@@ -85,12 +85,16 @@ type Font struct {
 	vboIndexCount int
 	eboData       []int32
 	eboIndexCount int
+
+	// X1, X2: the lower left and upper right points of a box that bounds the text
+	X1 Point
+	X2 Point
 }
 
 func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f = new(Font)
 	f.config = config
-	f.textLowerBound = 0.1
+	f.textLowerBound = 0.4 // lower numbers make fatter text
 
 	// Resize image to next power-of-two.
 	img = Pow2Image(img).(*image.RGBA)
@@ -243,20 +247,18 @@ func (f *Font) SetTextLowerBound(v float32) {
 	f.textLowerBound = v
 }
 
-// x1, x2: the lower left and upper right points of a box that bounds the text
-func (f *Font) SetString(fs string, argv ...interface{}) (x1, x2 Point) {
+func (f *Font) SetString(fs string, argv ...interface{}) (Point, Point) {
 	indices := []rune(fmt.Sprintf(fs, argv...))
 	if len(indices) == 0 {
-		return
+		return Point{}, Point{}
 	}
 	// ebo, vbo data
 	f.vboIndexCount = len(indices) * 4 * 2 * 2 // 4 indexes per rune (containing 2 position + 2 texture)
 	f.eboIndexCount = len(indices) * 6         // each rune requires 6 triangle indices for a quad
 	f.vboData = make([]float32, f.vboIndexCount, f.vboIndexCount)
 	f.eboData = make([]int32, f.eboIndexCount, f.eboIndexCount)
-	x1, x2 = f.makeBufferData(indices)
-
-	return
+	f.makeBufferData(indices)
+	return f.X1, f.X2
 }
 
 func (f *Font) SetPosition(x, y float32) {
@@ -303,30 +305,32 @@ func (f *Font) Draw() {
 	gl.Disable(gl.BLEND)
 }
 
-func (f *Font) getBoundingBox(vboIndex int, x1, x2 *Point) {
+func (f *Font) getBoundingBox(vboIndex int) {
 	// index -4: x, index -3: y, index -2: uv's x, index -1 uv's y
 	x := f.vboData[vboIndex-4]
 	y := f.vboData[vboIndex-3]
 
 	if vboIndex-4 == 0 {
-		x1.X = x
-		x1.Y = y
+		f.X1.X = x
+		f.X1.Y = y
 	} else {
-		if x < x1.X {
-			x1.X = x
+		if x < f.X1.X {
+			f.X1.X = x
 		}
-		if y < x1.Y {
-			x1.Y = y
+		if y < f.X1.Y {
+			f.X1.Y = y
 		}
-		if x > x2.X {
-			x2.X = x
+		if x > f.X2.X {
+			f.X2.X = x
 		}
-		if y > x2.Y {
-			x2.Y = y
+		if y > f.X2.Y {
+			f.X2.Y = y
 		}
 	}
 }
 
+// all text originally sits at point (0,0) which is the
+// lower left hand corner of the screen.
 func (f *Font) setDataPosition(x, y float32) {
 	length := len(f.vboData)
 	for index := 0; index < length; {
@@ -357,7 +361,7 @@ func (f *Font) setDataPosition(x, y float32) {
 }
 
 // currently only supports left to right text flow
-func (f *Font) makeBufferData(indices []rune) (x1, x2 Point) {
+func (f *Font) makeBufferData(indices []rune) {
 	glyphs := f.config.Glyphs
 	low := f.config.Low
 
@@ -383,7 +387,7 @@ func (f *Font) makeBufferData(indices []rune) (x1, x2 Point) {
 			vboIndex++
 			f.vboData[vboIndex] = tP2.Y
 			vboIndex++
-			f.getBoundingBox(vboIndex, &x1, &x2)
+			f.getBoundingBox(vboIndex)
 
 			// index (1,0)
 			f.vboData[vboIndex] = lineX + vw
@@ -394,7 +398,7 @@ func (f *Font) makeBufferData(indices []rune) (x1, x2 Point) {
 			vboIndex++
 			f.vboData[vboIndex] = tP2.Y
 			vboIndex++
-			f.getBoundingBox(vboIndex, &x1, &x2)
+			f.getBoundingBox(vboIndex)
 
 			// index (1,1)
 			f.vboData[vboIndex] = lineX + vw
@@ -405,7 +409,7 @@ func (f *Font) makeBufferData(indices []rune) (x1, x2 Point) {
 			vboIndex++
 			f.vboData[vboIndex] = tP1.Y
 			vboIndex++
-			f.getBoundingBox(vboIndex, &x1, &x2)
+			f.getBoundingBox(vboIndex)
 
 			// index (0,1)
 			f.vboData[vboIndex] = lineX
@@ -416,7 +420,7 @@ func (f *Font) makeBufferData(indices []rune) (x1, x2 Point) {
 			vboIndex++
 			f.vboData[vboIndex] = tP1.Y
 			vboIndex++
-			f.getBoundingBox(vboIndex, &x1, &x2)
+			f.getBoundingBox(vboIndex)
 
 			advance := float32(glyphs[r].Advance)
 			lineX += advance
