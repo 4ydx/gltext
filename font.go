@@ -44,19 +44,8 @@ out vec4 fragment_color;
 
 void main() {
   vec4 color = texture(fragment_texture, fragment_uv);
-  if(color.x > text_lowerbound && color.y > text_lowerbound && color.z > text_lowerbound) {
-    color   = color - vec4(fragment_color_adjustment.xyz, 0.0);
-    color.a = fragment_color_adjustment.w;
-
-    // it appears that the fragment color's background is black.
-    // if we subtract (0,0,0) - (1,1,1) we end up with negative
-    // numbers so we have to translate back into an acceptable range.
-    color   = abs(color);
-  } else {
-    // if we dont appear to be working on a fragment inside
-    // a piece of text, make this completely opaque to accept
-    // whatever the user has set in the background.
-    color = vec4(0,0,0,0);
+  if(color.w > text_lowerbound) {
+    color = fragment_color_adjustment;
   }
   fragment_color = color;
 }
@@ -76,11 +65,10 @@ type Font struct {
 	colorUniform int32
 	color        mgl32.Vec4
 
-	// The fragment shader currently attempts to enable complete opacity
-	// on fragments that don't appear to be apart of the text ie any
-	// non color(0,0,0) fragments.  The lower bound can be adjusted, but
-	// will tend to make the text narrower.  I'm not sure how to improve
-	// this code so that backgrounds in the bitmap can be completely opaque.
+	// The background of the image is transparent.  Using an arbitrary
+	// lower limit to distinguish between the background and the text.
+	// There must be a better way that preserves the gradient-like
+	// appearance of the text that the freetype-go library produces.
 	textLowerBoundUniform int32
 	textLowerBound        float32
 
@@ -248,10 +236,7 @@ func (f *Font) Release() {
 }
 
 func (f *Font) SetColor(r, g, b, a float32) {
-	// the img representing fonts defaults to white so we have to invert the requested values
-	// eg if the user selects (1,1,1) they want a white image which means the underlying texture
-	//    does not need to change
-	f.color = mgl32.Vec4{1.0 - r, 1.0 - g, 1.0 - b, a}
+	f.color = mgl32.Vec4{r, g, b, a}
 }
 
 func (f *Font) SetTextLowerBound(v float32) {

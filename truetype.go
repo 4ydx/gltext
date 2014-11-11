@@ -8,6 +8,7 @@ import (
 	"code.google.com/p/freetype-go/freetype"
 	"code.google.com/p/freetype-go/freetype/truetype"
 	"image"
+	"image/draw"
 	"io"
 	"io/ioutil"
 )
@@ -52,8 +53,10 @@ func LoadTruetype(r io.Reader, scale int32, low, high rune) (*Font, error) {
 	iw := Pow2(uint32(gw * glyphsPerRow))
 	ih := Pow2(uint32(gh * glyphsPerCol))
 
+	fg, bg := image.White, image.Transparent
 	rect := image.Rect(0, 0, int(iw), int(ih))
 	img := image.NewRGBA(rect)
+	draw.Draw(img, img.Bounds(), bg, image.ZP, draw.Src)
 
 	// Use a freetype context to do the drawing.
 	c := freetype.NewContext()
@@ -62,7 +65,7 @@ func LoadTruetype(r io.Reader, scale int32, low, high rune) (*Font, error) {
 	c.SetFontSize(float64(scale))
 	c.SetClip(img.Bounds())
 	c.SetDst(img)
-	c.SetSrc(image.White)
+	c.SetSrc(fg)
 
 	// Iterate over all relevant glyphs in the truetype font and
 	// draw them all to the image buffer.
