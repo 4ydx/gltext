@@ -4,9 +4,13 @@ A simple package for rendering a string using modern opengl.  Based on the bound
 box of a string, positioning of the string on screen prior to rendering is possible.
 There do seem to be issues with the dimensions reported by freetype-go unfortunately.
 
+- Unicode support.
+- Dynamic text resizing.
+- Dynamic color changes.
+
 Unicode support is based on the underlying truetype font being used (or bitmap).
 
-![Alt text](/example.png?raw=true "Simple Screenshot")
+![Alt text](/example.gif?raw=true "Simple Screenshot")
 
 ### Install
 
