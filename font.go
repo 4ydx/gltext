@@ -314,7 +314,6 @@ func (f *Font) SetPosition(x, y float32) {
 	gl.BufferData(
 		gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*f.eboIndexCount, gl.Ptr(f.eboData), gl.DYNAMIC_DRAW)
 	gl.BindVertexArray(0)
-	// completed context
 
 	// not necesssary, but i just want to better understand using vertex arrays
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
