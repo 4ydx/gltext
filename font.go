@@ -82,6 +82,8 @@ type Font struct {
 	orthographicMatrix        mgl32.Mat4
 
 	// scaling the font
+	Scale              float32
+	ScaleMax           float32
 	scaleMatrixUniform int32
 	scaleMatrix        mgl32.Mat4
 
@@ -106,6 +108,9 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f = new(Font)
 	f.config = config
 	f.SetTextLowerBound(0.4) // lower numbers make fatter text
+
+	// text hover values - implicit ScaleMin of 1.0
+	f.ScaleMax = 1.1
 	f.SetScale(1)
 
 	// Resize image to next power-of-two.
@@ -246,8 +251,27 @@ func (f *Font) Release() {
 	f.config = nil
 }
 
-func (f *Font) SetScale(s float32) {
+func (f *Font) SetScale(s float32) (changed bool) {
+	if s > f.ScaleMax || s < 1.0 {
+		return
+	}
+	changed = true
+	f.Scale = s
 	f.scaleMatrix = mgl32.Scale3D(s, s, s)
+	return
+}
+
+func (f *Font) AddScale(s float32) (changed bool) {
+	if s < 0 && f.Scale <= 1.0 {
+		return
+	}
+	if s > 0 && f.Scale >= f.ScaleMax {
+		return
+	}
+	changed = true
+	f.Scale += s
+	f.scaleMatrix = mgl32.Scale3D(f.Scale, f.Scale, f.Scale)
+	return
 }
 
 func (f *Font) SetColor(r, g, b, a float32) {
