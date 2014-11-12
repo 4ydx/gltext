@@ -19,7 +19,8 @@ const debug = false
 var vertexShaderSource string = `
 #version 330
 
-uniform mat4 matrix;
+uniform mat4 scale_matrix;
+uniform mat4 orthographic_matrix;
 
 in vec4 position;
 in vec2 uv;
@@ -28,7 +29,7 @@ out vec2 fragment_uv;
 
 void main() {
   fragment_uv = uv;
-  gl_Position = matrix * position;
+  gl_Position = scale_matrix * orthographic_matrix * position;
 }
 ` + "\x00"
 
@@ -52,14 +53,18 @@ void main() {
 ` + "\x00"
 
 type Font struct {
-	config                 *FontConfig // Character set for this font.
-	textureID              uint32      // Holds the glyph texture id.
-	maxGlyphWidth          int         // Largest glyph width.
-	maxGlyphHeight         int         // Largest glyph height.
-	program                uint32      // program compiled from shaders
-	position               uint32      // Position of the shaders 'position' variable
-	uv                     uint32      // Position of the shaders uv variable
-	fragmentTextureUniform int32       // Position of the shaders fragment texture variable
+	config         *FontConfig // Character set for this font.
+	textureID      uint32      // Holds the glyph texture id.
+	maxGlyphWidth  int         // Largest glyph width.
+	maxGlyphHeight int         // Largest glyph height.
+	program        uint32      // program compiled from shaders
+
+	// attributes
+	position uint32 // vertex position
+	uv       uint32 // texture position
+
+	// Position of the shaders fragment texture variable
+	fragmentTextureUniform int32
 
 	// The desired color of the text
 	colorUniform int32
@@ -72,7 +77,14 @@ type Font struct {
 	textLowerBoundUniform int32
 	textLowerBound        float32
 
-	glMatrix      int32
+	// transform to orthographic projection
+	orthographicMatrixUniform int32
+	orthographicMatrix        mgl32.Mat4
+
+	// scaling the font
+	scaleMatrixUniform int32
+	scaleMatrix        mgl32.Mat4
+
 	vao           uint32
 	vbo           uint32
 	ebo           uint32
@@ -80,7 +92,6 @@ type Font struct {
 	textureHeight float32
 	windowWidth   float32
 	windowHeight  float32
-	ortho         mgl32.Mat4
 	vboData       []float32
 	vboIndexCount int
 	eboData       []int32
@@ -155,9 +166,13 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 		return f, err
 	}
 
-	f.glMatrix = gl.GetUniformLocation(f.program, gl.Str("matrix\x00"))
+	// attributes
 	f.position = uint32(gl.GetAttribLocation(f.program, gl.Str("position\x00")))
 	f.uv = uint32(gl.GetAttribLocation(f.program, gl.Str("uv\x00")))
+
+	// uniforms
+	f.orthographicMatrixUniform = gl.GetUniformLocation(f.program, gl.Str("orthographic_matrix\x00"))
+	f.scaleMatrixUniform = gl.GetUniformLocation(f.program, gl.Str("scale_matrix\x00"))
 	f.fragmentTextureUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_texture\x00"))
 	f.colorUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_color_adjustment\x00"))
 	f.textLowerBoundUniform = gl.GetUniformLocation(f.program, gl.Str("text_lowerbound\x00"))
@@ -217,17 +232,8 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 func (f *Font) ResizeWindow(width float32, height float32) {
 	f.windowWidth = width
 	f.windowHeight = height
-	f.ortho = mgl32.Ortho2D(0, f.windowWidth, 0, f.windowHeight)
+	f.orthographicMatrix = mgl32.Ortho2D(0, f.windowWidth, 0, f.windowHeight)
 }
-
-// Low returns the font's lower rune bound.
-func (f *Font) Low() rune { return f.config.Low }
-
-// High returns the font's upper rune bound.
-func (f *Font) High() rune { return f.config.High }
-
-// Glyphs returns the font's glyph descriptors.
-func (f *Font) Glyphs() Charset { return f.config.Glyphs }
 
 // Release releases font resources.
 // A font can no longer be used for rendering after this call completes.
@@ -237,6 +243,10 @@ func (f *Font) Release() {
 	gl.DeleteBuffers(1, &f.ebo)
 	gl.DeleteBuffers(1, &f.vao)
 	f.config = nil
+}
+
+func (f *Font) SetScale(s float32) {
+	f.scaleMatrix = mgl32.Scale3D(s, s, s)
 }
 
 func (f *Font) SetColor(r, g, b, a float32) {
@@ -264,7 +274,7 @@ func (f *Font) SetString(fs string, argv ...interface{}) (Point, Point) {
 func (f *Font) SetPosition(x, y float32) {
 	f.setDataPosition(x, y)
 	if debug {
-		fmt.Printf("ortho matrix\n%v\n", f.ortho)
+		fmt.Printf("ortho matrix\n%v\n", f.orthographicMatrix)
 		fmt.Printf("vbo data\n%v\n", f.vboData)
 		fmt.Printf("ebo data\n%v\n", f.eboData)
 	}
@@ -292,11 +302,15 @@ func (f *Font) Draw() {
 
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, f.textureID)
+
+	// uniforms
 	gl.Uniform1i(f.fragmentTextureUniform, 0)
 	gl.Uniform1f(f.textLowerBoundUniform, f.textLowerBound)
 	gl.Uniform4fv(f.colorUniform, 1, &f.color[0])
-	gl.UniformMatrix4fv(f.glMatrix, 1, false, &f.ortho[0])
+	gl.UniformMatrix4fv(f.orthographicMatrixUniform, 1, false, &f.orthographicMatrix[0])
+	gl.UniformMatrix4fv(f.scaleMatrixUniform, 1, false, &f.scaleMatrix[0])
 
+	// draw
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	gl.BindVertexArray(f.vao)
@@ -448,11 +462,4 @@ func (f *Font) makeBufferData(indices []rune) {
 		}
 	}
 	return
-}
-
-// GlyphBounds returns the largest width and height for any of the glyphs
-// in the font. This constitutes the largest possible bounding box
-// a single glyph will have.
-func (f *Font) GlyphBounds() (int, int) {
-	return f.maxGlyphWidth, f.maxGlyphHeight
 }
