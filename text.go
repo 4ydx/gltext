@@ -11,6 +11,8 @@ import (
 )
 
 type Text struct {
+	font *Font
+
 	// The desired color of the text
 	color mgl32.Vec4
 
@@ -36,6 +38,7 @@ type Text struct {
 
 func LoadText(f *Font) (t *Text, err error) {
 	t = new(Text)
+	t.font = f
 
 	// text hover values - implicit ScaleMin of 1.0
 	t.ScaleMax = 1.1
@@ -56,15 +59,15 @@ func LoadText(f *Font) (t *Text, err error) {
 	gl.BindVertexArray(t.vao)
 
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, f.textureID)
+	gl.BindTexture(gl.TEXTURE_2D, t.font.textureID)
 
 	// vbo
 	// specify the buffer for which the VertexAttribPointer calls apply
 	gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
 
-	gl.EnableVertexAttribArray(f.position)
+	gl.EnableVertexAttribArray(t.font.position)
 	gl.VertexAttribPointer(
-		f.position,
+		t.font.position,
 		2,
 		gl.FLOAT,
 		false,
@@ -72,9 +75,9 @@ func LoadText(f *Font) (t *Text, err error) {
 		gl.PtrOffset(0),
 	)
 
-	gl.EnableVertexAttribArray(f.uv)
+	gl.EnableVertexAttribArray(t.font.uv)
 	gl.VertexAttribPointer(
-		f.uv,
+		t.font.uv,
 		2,
 		gl.FLOAT,
 		false,
@@ -138,7 +141,7 @@ func (t *Text) SetString(f *Font, fs string, argv ...interface{}) (Point, Point)
 	t.eboIndexCount = len(indices) * 6         // each rune requires 6 triangle indices for a quad
 	t.vboData = make([]float32, t.vboIndexCount, t.vboIndexCount)
 	t.eboData = make([]int32, t.eboIndexCount, t.eboIndexCount)
-	t.makeBufferData(f, indices)
+	t.makeBufferData(indices)
 	return t.X1, t.X2
 }
 
@@ -166,18 +169,18 @@ func (t *Text) SetPosition(x, y float32) {
 	return
 }
 
-func (t *Text) Draw(f *Font) {
-	gl.UseProgram(f.program)
+func (t *Text) Draw() {
+	gl.UseProgram(t.font.program)
 
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, f.textureID)
+	gl.BindTexture(gl.TEXTURE_2D, t.font.textureID)
 
 	// uniforms
-	gl.Uniform1i(f.fragmentTextureUniform, 0)
-	gl.Uniform1f(f.textLowerBoundUniform, f.textLowerBound)
-	gl.Uniform4fv(f.colorUniform, 1, &t.color[0])
-	gl.UniformMatrix4fv(f.orthographicMatrixUniform, 1, false, &f.orthographicMatrix[0])
-	gl.UniformMatrix4fv(f.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
+	gl.Uniform1i(t.font.fragmentTextureUniform, 0)
+	gl.Uniform1f(t.font.textLowerBoundUniform, t.font.textLowerBound)
+	gl.Uniform4fv(t.font.colorUniform, 1, &t.color[0])
+	gl.UniformMatrix4fv(t.font.orthographicMatrixUniform, 1, false, &t.font.orthographicMatrix[0])
+	gl.UniformMatrix4fv(t.font.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
 
 	// draw
 	gl.Enable(gl.BLEND)
@@ -249,9 +252,9 @@ func (t *Text) setDataPosition(x, y float32) {
 }
 
 // currently only supports left to right text flow
-func (t *Text) makeBufferData(f *Font, indices []rune) {
-	glyphs := f.config.Glyphs
-	low := f.config.Low
+func (t *Text) makeBufferData(indices []rune) {
+	glyphs := t.font.config.Glyphs
+	low := t.font.config.Low
 
 	vboIndex := 0
 	eboIndex := 0
@@ -262,7 +265,7 @@ func (t *Text) makeBufferData(f *Font, indices []rune) {
 		if r >= 0 && int(r) < len(glyphs) {
 			vw := float32(glyphs[r].Width)
 			vh := float32(glyphs[r].Height)
-			tP1, tP2 := glyphs[r].GetIndices(f)
+			tP1, tP2 := glyphs[r].GetIndices(t.font)
 
 			// counter-clockwise quad
 
