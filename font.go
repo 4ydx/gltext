@@ -6,7 +6,6 @@ package gltext
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/go-gl/glow/gl-core/3.3/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"image"
@@ -68,7 +67,6 @@ type Font struct {
 
 	// The desired color of the text
 	colorUniform int32
-	color        mgl32.Vec4
 
 	// The background of the image is transparent.  Using an arbitrary
 	// lower limit to distinguish between the background and the text.
@@ -77,41 +75,22 @@ type Font struct {
 	textLowerBoundUniform int32
 	textLowerBound        float32
 
-	// transform to orthographic projection
+	// View matrix
 	orthographicMatrixUniform int32
 	orthographicMatrix        mgl32.Mat4
 
-	// scaling the font
-	Scale              float32
-	ScaleMax           float32
+	// Scale the resulting text
 	scaleMatrixUniform int32
-	scaleMatrix        mgl32.Mat4
 
-	vao           uint32
-	vbo           uint32
-	ebo           uint32
 	textureWidth  float32
 	textureHeight float32
 	windowWidth   float32
 	windowHeight  float32
-	vboData       []float32
-	vboIndexCount int
-	eboData       []int32
-	eboIndexCount int
-
-	// X1, X2: the lower left and upper right points of a box that bounds the text
-	X1 Point
-	X2 Point
 }
 
 func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f = new(Font)
 	f.config = config
-	f.SetTextLowerBound(0.4) // lower numbers make fatter text
-
-	// text hover values - implicit ScaleMin of 1.0
-	f.ScaleMax = 1.1
-	f.SetScale(1)
 
 	// Resize image to next power-of-two.
 	img = Pow2Image(img).(*image.RGBA)
@@ -182,56 +161,6 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f.fragmentTextureUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_texture\x00"))
 	f.colorUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_color_adjustment\x00"))
 	f.textLowerBoundUniform = gl.GetUniformLocation(f.program, gl.Str("text_lowerbound\x00"))
-
-	// size of glfloat
-	glfloat_size := int32(4)
-
-	// stride of the buffered data
-	xy_count := int32(2)
-	stride := xy_count + int32(2)
-
-	gl.GenVertexArrays(1, &f.vao)
-	gl.GenBuffers(1, &f.vbo)
-	gl.GenBuffers(1, &f.ebo)
-
-	// vao
-	gl.BindVertexArray(f.vao)
-
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, f.textureID)
-
-	// vbo
-	// specify the buffer for which the VertexAttribPointer calls apply
-	gl.BindBuffer(gl.ARRAY_BUFFER, f.vbo)
-
-	gl.EnableVertexAttribArray(f.position)
-	gl.VertexAttribPointer(
-		f.position,
-		2,
-		gl.FLOAT,
-		false,
-		glfloat_size*stride,
-		gl.PtrOffset(0),
-	)
-
-	gl.EnableVertexAttribArray(f.uv)
-	gl.VertexAttribPointer(
-		f.uv,
-		2,
-		gl.FLOAT,
-		false,
-		glfloat_size*stride,
-		gl.PtrOffset(int(glfloat_size*xy_count)),
-	)
-
-	// ebo
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, f.ebo)
-
-	// i am guessing that order is important here
-	gl.BindVertexArray(0)
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
-
 	return f, nil
 }
 
@@ -245,245 +174,9 @@ func (f *Font) ResizeWindow(width float32, height float32) {
 // A font can no longer be used for rendering after this call completes.
 func (f *Font) Release() {
 	gl.DeleteTextures(1, &f.textureID)
-	gl.DeleteBuffers(1, &f.vbo)
-	gl.DeleteBuffers(1, &f.ebo)
-	gl.DeleteBuffers(1, &f.vao)
 	f.config = nil
-}
-
-func (f *Font) SetScale(s float32) (changed bool) {
-	if s > f.ScaleMax || s < 1.0 {
-		return
-	}
-	changed = true
-	f.Scale = s
-	f.scaleMatrix = mgl32.Scale3D(s, s, s)
-	return
-}
-
-func (f *Font) AddScale(s float32) (changed bool) {
-	if s < 0 && f.Scale <= 1.0 {
-		return
-	}
-	if s > 0 && f.Scale >= f.ScaleMax {
-		return
-	}
-	changed = true
-	f.Scale += s
-	f.scaleMatrix = mgl32.Scale3D(f.Scale, f.Scale, f.Scale)
-	return
-}
-
-func (f *Font) SetColor(r, g, b, a float32) {
-	f.color = mgl32.Vec4{r, g, b, a}
 }
 
 func (f *Font) SetTextLowerBound(v float32) {
 	f.textLowerBound = v
-}
-
-func (f *Font) SetString(fs string, argv ...interface{}) (Point, Point) {
-	indices := []rune(fmt.Sprintf(fs, argv...))
-	if len(indices) == 0 {
-		return Point{}, Point{}
-	}
-	// ebo, vbo data
-	f.vboIndexCount = len(indices) * 4 * 2 * 2 // 4 indexes per rune (containing 2 position + 2 texture)
-	f.eboIndexCount = len(indices) * 6         // each rune requires 6 triangle indices for a quad
-	f.vboData = make([]float32, f.vboIndexCount, f.vboIndexCount)
-	f.eboData = make([]int32, f.eboIndexCount, f.eboIndexCount)
-	f.makeBufferData(indices)
-	return f.X1, f.X2
-}
-
-func (f *Font) SetPosition(x, y float32) {
-	f.setDataPosition(x, y)
-	if debug {
-		fmt.Printf("ortho matrix\n%v\n", f.orthographicMatrix)
-		fmt.Printf("vbo data\n%v\n", f.vboData)
-		fmt.Printf("ebo data\n%v\n", f.eboData)
-	}
-	glfloat_size := int32(4)
-
-	// setup context
-	gl.BindVertexArray(f.vao)
-	gl.BindBuffer(gl.ARRAY_BUFFER, f.vbo)
-	gl.BufferData(
-		gl.ARRAY_BUFFER, int(glfloat_size)*f.vboIndexCount, gl.Ptr(f.vboData), gl.DYNAMIC_DRAW)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, f.ebo)
-	gl.BufferData(
-		gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*f.eboIndexCount, gl.Ptr(f.eboData), gl.DYNAMIC_DRAW)
-	gl.BindVertexArray(0)
-
-	// not necesssary, but i just want to better understand using vertex arrays
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
-	return
-}
-
-func (f *Font) Draw() {
-	gl.UseProgram(f.program)
-
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, f.textureID)
-
-	// uniforms
-	gl.Uniform1i(f.fragmentTextureUniform, 0)
-	gl.Uniform1f(f.textLowerBoundUniform, f.textLowerBound)
-	gl.Uniform4fv(f.colorUniform, 1, &f.color[0])
-	gl.UniformMatrix4fv(f.orthographicMatrixUniform, 1, false, &f.orthographicMatrix[0])
-	gl.UniformMatrix4fv(f.scaleMatrixUniform, 1, false, &f.scaleMatrix[0])
-
-	// draw
-	gl.Enable(gl.BLEND)
-	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-	gl.BindVertexArray(f.vao)
-	gl.DrawElements(gl.TRIANGLES, int32(f.eboIndexCount), gl.UNSIGNED_INT, nil)
-	gl.BindVertexArray(0)
-	gl.Disable(gl.BLEND)
-}
-
-func (f *Font) getBoundingBox(vboIndex int) {
-	// index -4: x, index -3: y, index -2: uv's x, index -1 uv's y
-	x := f.vboData[vboIndex-4]
-	y := f.vboData[vboIndex-3]
-
-	if vboIndex-4 == 0 {
-		f.X1.X = x
-		f.X1.Y = y
-	} else {
-		if x < f.X1.X {
-			f.X1.X = x
-		}
-		if y < f.X1.Y {
-			f.X1.Y = y
-		}
-		if x > f.X2.X {
-			f.X2.X = x
-		}
-		if y > f.X2.Y {
-			f.X2.Y = y
-		}
-	}
-}
-
-// all text originally sits at point (0,0) which is the
-// lower left hand corner of the screen.
-func (f *Font) setDataPosition(x, y float32) {
-	length := len(f.vboData)
-	for index := 0; index < length; {
-		// index (0,0)
-		f.vboData[index] += x
-		index++
-		f.vboData[index] += y
-		index += 3 // skip texture data
-
-		// index (1,0)
-		f.vboData[index] += x
-		index++
-		f.vboData[index] += y
-		index += 3
-
-		// index (1,1)
-		f.vboData[index] += x
-		index++
-		f.vboData[index] += y
-		index += 3
-
-		// index (0,1)
-		f.vboData[index] += x
-		index++
-		f.vboData[index] += y
-		index += 3
-	}
-	// update screen position
-	f.X1.X += x
-	f.X2.X += x
-	f.X1.Y += y
-	f.X2.Y += y
-}
-
-// currently only supports left to right text flow
-func (f *Font) makeBufferData(indices []rune) {
-	glyphs := f.config.Glyphs
-	low := f.config.Low
-
-	vboIndex := 0
-	eboIndex := 0
-	lineX := float32(0)
-	eboOffset := int32(0)
-	for _, r := range indices {
-		r -= low
-		if r >= 0 && int(r) < len(glyphs) {
-			vw := float32(glyphs[r].Width)
-			vh := float32(glyphs[r].Height)
-			tP1, tP2 := glyphs[r].GetIndices(f)
-
-			// counter-clockwise quad
-
-			// index (0,0)
-			f.vboData[vboIndex] = lineX // position
-			vboIndex++
-			f.vboData[vboIndex] = 0
-			vboIndex++
-			f.vboData[vboIndex] = tP1.X // texture uv
-			vboIndex++
-			f.vboData[vboIndex] = tP2.Y
-			vboIndex++
-			f.getBoundingBox(vboIndex)
-
-			// index (1,0)
-			f.vboData[vboIndex] = lineX + vw
-			vboIndex++
-			f.vboData[vboIndex] = 0
-			vboIndex++
-			f.vboData[vboIndex] = tP2.X
-			vboIndex++
-			f.vboData[vboIndex] = tP2.Y
-			vboIndex++
-			f.getBoundingBox(vboIndex)
-
-			// index (1,1)
-			f.vboData[vboIndex] = lineX + vw
-			vboIndex++
-			f.vboData[vboIndex] = vh
-			vboIndex++
-			f.vboData[vboIndex] = tP2.X
-			vboIndex++
-			f.vboData[vboIndex] = tP1.Y
-			vboIndex++
-			f.getBoundingBox(vboIndex)
-
-			// index (0,1)
-			f.vboData[vboIndex] = lineX
-			vboIndex++
-			f.vboData[vboIndex] = vh
-			vboIndex++
-			f.vboData[vboIndex] = tP1.X
-			vboIndex++
-			f.vboData[vboIndex] = tP1.Y
-			vboIndex++
-			f.getBoundingBox(vboIndex)
-
-			advance := float32(glyphs[r].Advance)
-			lineX += advance
-
-			// ebo data
-			f.eboData[eboIndex] = 0 + eboOffset
-			eboIndex++
-			f.eboData[eboIndex] = 1 + eboOffset
-			eboIndex++
-			f.eboData[eboIndex] = 2 + eboOffset
-			eboIndex++
-
-			f.eboData[eboIndex] = 0 + eboOffset
-			eboIndex++
-			f.eboData[eboIndex] = 2 + eboOffset
-			eboIndex++
-			f.eboData[eboIndex] = 3 + eboOffset
-			eboIndex++
-			eboOffset += 4
-		}
-	}
-	return
 }
