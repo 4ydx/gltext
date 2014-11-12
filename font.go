@@ -105,7 +105,8 @@ type Font struct {
 func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f = new(Font)
 	f.config = config
-	f.textLowerBound = 0.4 // lower numbers make fatter text
+	f.SetTextLowerBound(0.4) // lower numbers make fatter text
+	f.SetScale(1)
 
 	// Resize image to next power-of-two.
 	img = Pow2Image(img).(*image.RGBA)
