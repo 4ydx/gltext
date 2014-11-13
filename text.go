@@ -194,11 +194,11 @@ func (t *Text) SetPosition(x, y float32) {
 	// and the text's default position is with its bounding box perfectly centered in the screen
 
 	// final place the corner on the position specified by the user
-	t.finalPosition[0] += x / t.font.windowWidth
-	t.finalPosition[1] += y / t.font.windowHeight
+	t.finalPosition[0] = x
+	t.finalPosition[1] = y
 	if IsEdit {
-		t.BoundingBox.finalPosition[0] += x / t.font.windowWidth
-		t.BoundingBox.finalPosition[1] += y / t.font.windowHeight
+		t.BoundingBox.finalPosition[0] = x
+		t.BoundingBox.finalPosition[1] = y
 	}
 }
 
