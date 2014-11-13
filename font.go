@@ -13,26 +13,34 @@ import (
 	"os"
 )
 
-const debug = false
+const IsDebug = true
 
-var vertexShaderSource string = `
+var fontVertexShaderSource string = `
 #version 330
 
 uniform mat4 scale_matrix;
 uniform mat4 orthographic_matrix;
+uniform vec2 final_position;
 
-in vec4 position;
+in vec4 centered_position;
 in vec2 uv;
 
 out vec2 fragment_uv;
 
+// The orthographic projection uses a lower left-hand point of (0,0)
+// 1) We center the text on screen.
+// 2) We perform othographic translformation and then scaling.
+// 3) We move the text to its final resting place.
+// This is all pretty standard I would imagine, but it took me a bit to sort out what has to happen :P
+
 void main() {
   fragment_uv = uv;
-  gl_Position = scale_matrix * orthographic_matrix * position;
+  vec4 scaled = scale_matrix * orthographic_matrix * centered_position;
+  gl_Position = vec4(scaled.x + final_position.x, scaled.y + final_position.y, scaled.z, scaled.w);
 }
 ` + "\x00"
 
-var fragmentShaderSource string = `
+var fontFragmentShaderSource string = `
 #version 330
 
 uniform sampler2D fragment_texture;
@@ -59,8 +67,11 @@ type Font struct {
 	program        uint32      // program compiled from shaders
 
 	// attributes
-	position uint32 // vertex position
-	uv       uint32 // texture position
+	centeredPosition uint32 // vertex centered_position required for scaling around the orthographic projections center
+	uv               uint32 // texture position
+
+	// The final screen position post-scaling
+	finalPositionUniform int32
 
 	// Position of the shaders fragment texture variable
 	fragmentTextureUniform int32
@@ -109,7 +120,7 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	}
 
 	// save to disk for testing
-	if debug {
+	if IsDebug {
 		file, err := os.Create("out.png")
 		if err != nil {
 			panic(err)
@@ -146,16 +157,17 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 
 	// create shader program and define attributes and uniforms
-	f.program, err = NewProgram(vertexShaderSource, fragmentShaderSource)
+	f.program, err = NewProgram(fontVertexShaderSource, fontFragmentShaderSource)
 	if err != nil {
 		return f, err
 	}
 
 	// attributes
-	f.position = uint32(gl.GetAttribLocation(f.program, gl.Str("position\x00")))
+	f.centeredPosition = uint32(gl.GetAttribLocation(f.program, gl.Str("centered_position\x00")))
 	f.uv = uint32(gl.GetAttribLocation(f.program, gl.Str("uv\x00")))
 
 	// uniforms
+	f.finalPositionUniform = gl.GetUniformLocation(f.program, gl.Str("final_position\x00"))
 	f.orthographicMatrixUniform = gl.GetUniformLocation(f.program, gl.Str("orthographic_matrix\x00"))
 	f.scaleMatrixUniform = gl.GetUniformLocation(f.program, gl.Str("scale_matrix\x00"))
 	f.fragmentTextureUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_texture\x00"))
@@ -167,11 +179,9 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 func (f *Font) ResizeWindow(width float32, height float32) {
 	f.windowWidth = width
 	f.windowHeight = height
-	f.orthographicMatrix = mgl32.Ortho2D(0, f.windowWidth, 0, f.windowHeight)
+	f.orthographicMatrix = mgl32.Ortho2D(-f.windowWidth/2, f.windowWidth/2, -f.windowHeight/2, f.windowHeight/2)
 }
 
-// Release releases font resources.
-// A font can no longer be used for rendering after this call completes.
 func (f *Font) Release() {
 	gl.DeleteTextures(1, &f.textureID)
 	f.config = nil

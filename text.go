@@ -10,10 +10,15 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
+const IsEdit = true
+
 type Text struct {
 	font *Font
 
-	// The desired color of the text
+	// final position on screen
+	finalPosition mgl32.Vec2
+
+	// text color
 	color mgl32.Vec4
 
 	// scaling the text
@@ -21,11 +26,13 @@ type Text struct {
 	ScaleMax    float32
 	scaleMatrix mgl32.Mat4
 
+	// bounding box of text
+	BoundingBox *BoundingBox
+
+	// general opengl values
 	vao           uint32
 	vbo           uint32
 	ebo           uint32
-	windowWidth   float32
-	windowHeight  float32
 	vboData       []float32
 	vboIndexCount int
 	eboData       []int32
@@ -65,9 +72,9 @@ func LoadText(f *Font) (t *Text, err error) {
 	// specify the buffer for which the VertexAttribPointer calls apply
 	gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
 
-	gl.EnableVertexAttribArray(t.font.position)
+	gl.EnableVertexAttribArray(t.font.centeredPosition)
 	gl.VertexAttribPointer(
-		t.font.position,
+		t.font.centeredPosition,
 		2,
 		gl.FLOAT,
 		false,
@@ -136,24 +143,27 @@ func (t *Text) SetString(f *Font, fs string, argv ...interface{}) (Point, Point)
 	if len(indices) == 0 {
 		return Point{}, Point{}
 	}
+
 	// ebo, vbo data
+	glfloat_size := int32(4)
+
 	t.vboIndexCount = len(indices) * 4 * 2 * 2 // 4 indexes per rune (containing 2 position + 2 texture)
 	t.eboIndexCount = len(indices) * 6         // each rune requires 6 triangle indices for a quad
 	t.vboData = make([]float32, t.vboIndexCount, t.vboIndexCount)
 	t.eboData = make([]int32, t.eboIndexCount, t.eboIndexCount)
+
+	// generate the basic vbo data and bounding box
 	t.makeBufferData(indices)
-	return t.X1, t.X2
-}
+	// find the centered position of the bounding box
+	lowerLeft := t.center()
+	// reposition the vbo data so that it is centered on screen
+	t.setDataPosition(lowerLeft)
 
-func (t *Text) SetPosition(x, y float32) {
-	t.setDataPosition(x, y)
-	if debug {
-		fmt.Printf("vbo data\n%v\n", t.vboData)
-		fmt.Printf("ebo data\n%v\n", t.eboData)
+	if IsDebug {
+		fmt.Printf("bounding box %v %v\n", t.X1, t.X2)
+		fmt.Printf("text vbo data\n%v\n", t.vboData)
+		fmt.Printf("text ebo data\n%v\n", t.eboData)
 	}
-	glfloat_size := int32(4)
-
-	// setup context
 	gl.BindVertexArray(t.vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
 	gl.BufferData(
@@ -166,10 +176,36 @@ func (t *Text) SetPosition(x, y float32) {
 	// not necesssary, but i just want to better understand using vertex arrays
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+
+	return t.X1, t.X2
+}
+
+func (t *Text) center() (lowerLeft Point) {
+	lineWidthHalf := (t.X2.X - t.X1.X) / 2
+	lineHeightHalf := (t.X2.Y - t.X1.Y) / 2
+
+	lowerLeft.X = -lineWidthHalf
+	lowerLeft.Y = -lineHeightHalf
 	return
 }
 
+func (t *Text) SetPosition(x, y float32) {
+	// at this point we are in orthographic projection coordinates which range from -1 to 1
+	// and the text's default position is with its bounding box perfectly centered in the screen
+
+	// final place the corner on the position specified by the user
+	t.finalPosition[0] += x / t.font.windowWidth
+	t.finalPosition[1] += y / t.font.windowHeight
+	if IsEdit {
+		t.BoundingBox.finalPosition[0] += x / t.font.windowWidth
+		t.BoundingBox.finalPosition[1] += y / t.font.windowHeight
+	}
+}
+
 func (t *Text) Draw() {
+	if IsEdit {
+		t.BoundingBox.Draw()
+	}
 	gl.UseProgram(t.font.program)
 
 	gl.ActiveTexture(gl.TEXTURE0)
@@ -179,6 +215,7 @@ func (t *Text) Draw() {
 	gl.Uniform1i(t.font.fragmentTextureUniform, 0)
 	gl.Uniform1f(t.font.textLowerBoundUniform, t.font.textLowerBound)
 	gl.Uniform4fv(t.font.colorUniform, 1, &t.color[0])
+	gl.Uniform2fv(t.font.finalPositionUniform, 1, &t.finalPosition[0])
 	gl.UniformMatrix4fv(t.font.orthographicMatrixUniform, 1, false, &t.font.orthographicMatrix[0])
 	gl.UniformMatrix4fv(t.font.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
 
@@ -217,38 +254,42 @@ func (t *Text) getBoundingBox(vboIndex int) {
 
 // all text originally sits at point (0,0) which is the
 // lower left hand corner of the screen.
-func (t *Text) setDataPosition(x, y float32) {
+func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	length := len(t.vboData)
 	for index := 0; index < length; {
 		// index (0,0)
-		t.vboData[index] += x
+		t.vboData[index] += lowerLeft.X
 		index++
-		t.vboData[index] += y
+		t.vboData[index] += lowerLeft.Y
 		index += 3 // skip texture data
 
 		// index (1,0)
-		t.vboData[index] += x
+		t.vboData[index] += lowerLeft.X
 		index++
-		t.vboData[index] += y
+		t.vboData[index] += lowerLeft.Y
 		index += 3
 
 		// index (1,1)
-		t.vboData[index] += x
+		t.vboData[index] += lowerLeft.X
 		index++
-		t.vboData[index] += y
+		t.vboData[index] += lowerLeft.Y
 		index += 3
 
 		// index (0,1)
-		t.vboData[index] += x
+		t.vboData[index] += lowerLeft.X
 		index++
-		t.vboData[index] += y
+		t.vboData[index] += lowerLeft.Y
 		index += 3
 	}
-	// update screen position
-	t.X1.X += x
-	t.X2.X += x
-	t.X1.Y += y
-	t.X2.Y += y
+	// update bounding box
+	t.X1.X += lowerLeft.X
+	t.X2.X += lowerLeft.X
+	t.X1.Y += lowerLeft.Y
+	t.X2.Y += lowerLeft.Y
+	if IsEdit {
+		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
+	}
+	return
 }
 
 // currently only supports left to right text flow
