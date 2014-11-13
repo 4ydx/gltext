@@ -5,7 +5,8 @@ box of a string, positioning of the string on screen prior to rendering is possi
 There do seem to be issues with the dimensions reported by freetype-go unfortunately.
 
 - Unicode support.
-- Dynamic text resizing.
+- Dynamic text zooming along the z-axis.
+- Dynamic text positioning within the orthographic projection space.
 - Dynamic color changes.
 
 Unicode support is based on the underlying truetype font being used (or bitmap).
