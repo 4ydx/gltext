@@ -1,4 +1,4 @@
-## a 'modern' opengl rewrite of go-gl/gltext
+## Modern opengl text rendering 
 
 A simple package for rendering a string using modern opengl.  Based on the bounding
 box of a string, positioning of the string on screen prior to rendering is possible.
@@ -20,30 +20,6 @@ Unicode support is based on the underlying truetype font being used (or bitmap).
 ### Example
 
 * Refer to https://github.com/4ydx/gltext_example as an example.
-
-### TODO
-
-* Have a look at Valve's 'Signed Distance Field` techniques to render
-  sharp font textures are different zoom levels.
-
-  * [SIGGRAPH2007_AlphaTestedMagnification.pdf](http://www.valvesoftware.com/publications/2007/SIGGRAPH2007_AlphaTestedMagnification.pdf)
-  * [Youtube video](http://www.youtube.com/watch?v=CGZRHJvJYIg)
-  
-  More links to info in the youtube video description.
-  An alternative might be a port of [GLyphy](http://code.google.com/p/glyphy/)
-
-
-### Known bugs
-
-* Determining the height of truetype glyphs is not entirely accurate.
-  It is unclear at this point how to get to this information reliably.
-  Specifically the parts in `LoadTruetype` at truetype.go#L54+.
-  The vertical glyph bounds computed by freetype-go are not correct for
-  certain fonts. Right now we manually offset the value by added `4` to
-  the height. This is an unreliable hack and should be fixed.
-* `freetype-go` does not expose `AdvanceHeight` for vertically rendered fonts.
-  This may mean that the Advance size for top-to-bottom fonts is incorrect.
-
 
 ### Dependencies
 
