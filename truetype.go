@@ -7,7 +7,6 @@ package gltext
 import (
 	"code.google.com/p/freetype-go/freetype"
 	"code.google.com/p/freetype-go/freetype/truetype"
-	"fmt"
 	"image"
 	"image/draw"
 	"io"
@@ -50,11 +49,11 @@ func LoadTruetype(r io.Reader, scale int32, low, high rune) (*Font, error) {
 
 	gb := ttf.Bounds(scale)
 	gw := (gb.XMax - gb.XMin)
-	fmt.Println("max gb x", gb.XMax, "min gb x", gb.XMin)
+	//fmt.Println("max gb x", gb.XMax, "min gb x", gb.XMin)
 
 	// why?
 	gh := (gb.YMax - gb.YMin) + 5
-	fmt.Println("max gb y", gb.YMax, "min gb y", gb.YMin)
+	//fmt.Println("max gb y", gb.YMax, "min gb y", gb.YMin)
 
 	iw := Pow2(uint32(gw * glyphsPerRow))
 	ih := Pow2(uint32(gh * glyphsPerCol))
