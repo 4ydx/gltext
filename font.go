@@ -13,7 +13,7 @@ import (
 	"os"
 )
 
-const IsDebug = true
+const IsDebug = false
 
 var fontVertexShaderSource string = `
 #version 330

@@ -10,7 +10,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const IsEdit = true
+const IsEdit = false
 
 type Text struct {
 	font *Font
