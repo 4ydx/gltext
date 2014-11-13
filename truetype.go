@@ -60,7 +60,8 @@ func LoadTruetype(r io.Reader, scale int32, low, high rune) (*Font, error) {
 
 	// Use a freetype context to do the drawing.
 	c := freetype.NewContext()
-	c.SetDPI(72)
+	// This seems totally arbitrary!  I don't understand DPI in a screen context :P
+	c.SetDPI(36)
 	c.SetFont(ttf)
 	c.SetFontSize(float64(scale))
 	c.SetClip(img.Bounds())
