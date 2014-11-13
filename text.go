@@ -43,7 +43,7 @@ type Text struct {
 	X2 Point
 }
 
-func LoadText(f *Font) (t *Text, err error) {
+func LoadText(f *Font) (t *Text) {
 	t = new(Text)
 	t.font = f
 
@@ -99,8 +99,7 @@ func LoadText(f *Font) (t *Text, err error) {
 	gl.BindVertexArray(0)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
-
-	return t, nil
+	return t
 }
 
 // Release releases font resources.
@@ -138,7 +137,7 @@ func (t *Text) SetColor(r, g, b, a float32) {
 	t.color = mgl32.Vec4{r, g, b, a}
 }
 
-func (t *Text) SetString(f *Font, fs string, argv ...interface{}) (Point, Point) {
+func (t *Text) SetString(fs string, argv ...interface{}) (Point, Point) {
 	indices := []rune(fmt.Sprintf(fs, argv...))
 	if len(indices) == 0 {
 		return Point{}, Point{}
