@@ -153,9 +153,12 @@ func (t *Text) SetString(fs string, argv ...interface{}) (Point, Point) {
 
 	// generate the basic vbo data and bounding box
 	t.makeBufferData(indices)
+
 	// find the centered position of the bounding box
 	lowerLeft := t.center()
-	// reposition the vbo data so that it is centered on screen
+
+	// reposition the vbo data so that it is centered at (0,0)
+	// according to the orthographic projection being used
 	t.setDataPosition(lowerLeft)
 
 	if IsDebug {
