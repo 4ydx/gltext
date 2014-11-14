@@ -39,8 +39,13 @@ type Text struct {
 	eboIndexCount int
 
 	// X1, X2: the lower left and upper right points of a box that bounds the text
+	//         actual screen coordinates
 	X1 Point
 	X2 Point
+
+	// Width and Height of the text in screen coordinates
+	Width  float32
+	Height float32
 }
 
 func LoadText(f *Font) (t *Text) {
@@ -191,14 +196,18 @@ func (t *Text) center() (lowerLeft Point) {
 
 func (t *Text) SetPosition(x, y float32) {
 	// we are in an orthographic projection state with ranges -1 to 1
-
-	// final place the corner on the position specified by the user
 	t.finalPosition[0] = x / t.font.WindowWidth
 	t.finalPosition[1] = y / t.font.WindowHeight
 	if IsEdit {
 		t.BoundingBox.finalPosition[0] = x / t.font.WindowWidth
 		t.BoundingBox.finalPosition[1] = y / t.font.WindowHeight
 	}
+
+	// Screen coordinates so -1 to 1 range transform is not required
+	t.X1.X += x / 2
+	t.X1.Y += y / 2
+	t.X2.X += x / 2
+	t.X2.Y += y / 2
 }
 
 func (t *Text) Draw() {
@@ -285,6 +294,8 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	t.X2.X += lowerLeft.X
 	t.X1.Y += lowerLeft.Y
 	t.X2.Y += lowerLeft.Y
+	t.Width = t.X2.X - t.X1.X
+	t.Height = t.X2.Y - t.X1.Y
 	if IsEdit {
 		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
 	}
