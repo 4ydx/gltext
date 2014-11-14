@@ -137,10 +137,10 @@ func (t *Text) SetColor(r, g, b, a float32) {
 	t.color = mgl32.Vec4{r, g, b, a}
 }
 
-func (t *Text) SetString(fs string, argv ...interface{}) (Point, Point) {
+func (t *Text) SetString(fs string, argv ...interface{}) {
 	indices := []rune(fmt.Sprintf(fs, argv...))
 	if len(indices) == 0 {
-		return Point{}, Point{}
+		return
 	}
 
 	// ebo, vbo data
@@ -178,8 +178,6 @@ func (t *Text) SetString(fs string, argv ...interface{}) (Point, Point) {
 	// not necesssary, but i just want to better understand using vertex arrays
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
-
-	return t.X1, t.X2
 }
 
 func (t *Text) center() (lowerLeft Point) {
@@ -192,6 +190,9 @@ func (t *Text) center() (lowerLeft Point) {
 }
 
 func (t *Text) SetPosition(x, y float32) {
+	// we are in an orthographic projection state with ranges -1 to 1
+	// i leave it up to the user to do the appropriate positioning
+
 	// final place the corner on the position specified by the user
 	t.finalPosition[0] = x
 	t.finalPosition[1] = y
