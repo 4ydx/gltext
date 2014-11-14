@@ -95,8 +95,8 @@ type Font struct {
 
 	textureWidth  float32
 	textureHeight float32
-	windowWidth   float32
-	windowHeight  float32
+	WindowWidth   float32
+	WindowHeight  float32
 }
 
 func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
@@ -177,9 +177,9 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 }
 
 func (f *Font) ResizeWindow(width float32, height float32) {
-	f.windowWidth = width
-	f.windowHeight = height
-	f.orthographicMatrix = mgl32.Ortho2D(-f.windowWidth/2, f.windowWidth/2, -f.windowHeight/2, f.windowHeight/2)
+	f.WindowWidth = width
+	f.WindowHeight = height
+	f.orthographicMatrix = mgl32.Ortho2D(-f.WindowWidth/2, f.WindowWidth/2, -f.WindowHeight/2, f.WindowHeight/2)
 }
 
 func (f *Font) Release() {

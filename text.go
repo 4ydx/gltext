@@ -10,7 +10,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const IsEdit = false
+const IsEdit = true
 
 type Text struct {
 	font *Font
@@ -191,14 +191,13 @@ func (t *Text) center() (lowerLeft Point) {
 
 func (t *Text) SetPosition(x, y float32) {
 	// we are in an orthographic projection state with ranges -1 to 1
-	// i leave it up to the user to do the appropriate positioning
 
 	// final place the corner on the position specified by the user
-	t.finalPosition[0] = x
-	t.finalPosition[1] = y
+	t.finalPosition[0] = x / t.font.WindowWidth
+	t.finalPosition[1] = y / t.font.WindowHeight
 	if IsEdit {
-		t.BoundingBox.finalPosition[0] = x
-		t.BoundingBox.finalPosition[1] = y
+		t.BoundingBox.finalPosition[0] = x / t.font.WindowWidth
+		t.BoundingBox.finalPosition[1] = y / t.font.WindowHeight
 	}
 }
 
