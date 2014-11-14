@@ -192,9 +192,6 @@ func (t *Text) center() (lowerLeft Point) {
 }
 
 func (t *Text) SetPosition(x, y float32) {
-	// at this point we are in orthographic projection coordinates which range from -1 to 1
-	// and the text's default position is with its bounding box perfectly centered in the screen
-
 	// final place the corner on the position specified by the user
 	t.finalPosition[0] = x
 	t.finalPosition[1] = y
@@ -291,6 +288,7 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	if IsEdit {
 		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
 	}
+	fmt.Println(t.X1, t.X2)
 	return
 }
 
