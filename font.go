@@ -13,8 +13,6 @@ import (
 	"os"
 )
 
-const IsDebug = false
-
 var fontVertexShaderSource string = `
 #version 330
 
@@ -60,6 +58,8 @@ void main() {
 ` + "\x00"
 
 type Font struct {
+	IsDebug bool
+
 	config         *FontConfig // Character set for this font.
 	textureID      uint32      // Holds the glyph texture id.
 	maxGlyphWidth  int         // Largest glyph width.
@@ -120,7 +120,7 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	}
 
 	// save to disk for testing
-	if IsDebug {
+	if f.IsDebug {
 		file, err := os.Create("out.png")
 		if err != nil {
 			panic(err)

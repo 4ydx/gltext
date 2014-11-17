@@ -10,10 +10,9 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const IsEdit = false
-
 type Text struct {
-	font *Font
+	IsEdit bool
+	font   *Font
 
 	// final position on screen
 	finalPosition mgl32.Vec2
@@ -23,6 +22,7 @@ type Text struct {
 
 	// scaling the text
 	Scale       float32
+	ScaleMin    float32
 	ScaleMax    float32
 	scaleMatrix mgl32.Mat4
 
@@ -40,19 +40,25 @@ type Text struct {
 
 	// X1, X2: the lower left and upper right points of a box that bounds the text
 	//         actual screen coordinates
-	X1 Point
-	X2 Point
+	X1           Point
+	X2           Point
+	SetPositionX float32
+	SetPositionY float32
 
 	// Width and Height of the text in screen coordinates
 	Width  float32
 	Height float32
+
+	String string
 }
 
 func LoadText(f *Font) (t *Text) {
 	t = new(Text)
 	t.font = f
 
-	// text hover values - implicit ScaleMin of 1.0
+	// text hover values
+	// "resting state" of a text object is the min scale
+	t.ScaleMin = 1.0
 	t.ScaleMax = 1.1
 	t.SetScale(1)
 
@@ -116,7 +122,7 @@ func (t *Text) Release() {
 }
 
 func (t *Text) SetScale(s float32) (changed bool) {
-	if s > t.ScaleMax || s < 1.0 {
+	if s > t.ScaleMax || s < t.ScaleMin {
 		return
 	}
 	changed = true
@@ -126,7 +132,7 @@ func (t *Text) SetScale(s float32) (changed bool) {
 }
 
 func (t *Text) AddScale(s float32) (changed bool) {
-	if s < 0 && t.Scale <= 1.0 {
+	if s < 0 && t.Scale <= t.ScaleMin {
 		return
 	}
 	if s > 0 && t.Scale >= t.ScaleMax {
@@ -147,6 +153,7 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	if len(indices) == 0 {
 		return
 	}
+	t.String = string(indices)
 
 	// ebo, vbo data
 	glfloat_size := int32(4)
@@ -166,7 +173,7 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	// according to the orthographic projection being used
 	t.setDataPosition(lowerLeft)
 
-	if IsDebug {
+	if t.font.IsDebug {
 		fmt.Printf("bounding box %v %v\n", t.X1, t.X2)
 		fmt.Printf("text vbo data\n%v\n", t.vboData)
 		fmt.Printf("text ebo data\n%v\n", t.eboData)
@@ -198,10 +205,12 @@ func (t *Text) SetPosition(x, y float32) {
 	// we are in an orthographic projection state with ranges -1 to 1
 	t.finalPosition[0] = x / t.font.WindowWidth
 	t.finalPosition[1] = y / t.font.WindowHeight
-	if IsEdit {
+	if t.IsEdit {
 		t.BoundingBox.finalPosition[0] = x / t.font.WindowWidth
 		t.BoundingBox.finalPosition[1] = y / t.font.WindowHeight
 	}
+	t.SetPositionX = x
+	t.SetPositionY = y
 
 	// Screen coordinates so -1 to 1 range transform is not required
 	t.X1.X += x / 2
@@ -211,7 +220,7 @@ func (t *Text) SetPosition(x, y float32) {
 }
 
 func (t *Text) Draw() {
-	if IsEdit {
+	if t.IsEdit {
 		t.BoundingBox.Draw()
 	}
 	gl.UseProgram(t.font.program)
@@ -296,7 +305,7 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	t.X2.Y += lowerLeft.Y
 	t.Width = t.X2.X - t.X1.X
 	t.Height = t.X2.Y - t.X1.Y
-	if IsEdit {
+	if t.IsEdit {
 		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
 	}
 	fmt.Println(t.X1, t.X2)
