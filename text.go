@@ -308,7 +308,6 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	if t.IsEdit {
 		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
 	}
-	fmt.Println(t.X1, t.X2)
 	return
 }
 
