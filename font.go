@@ -52,6 +52,8 @@ void main() {
   vec4 color = texture(fragment_texture, fragment_uv);
   if(color.w > text_lowerbound) {
     color = fragment_color_adjustment;
+  } else {
+    color = vec4(0,0,0,0);
   }
   fragment_color = color;
 }

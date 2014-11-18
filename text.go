@@ -11,8 +11,8 @@ import (
 )
 
 type Text struct {
-	IsEdit bool
-	font   *Font
+	IsDebug bool
+	font    *Font
 
 	// final position on screen
 	finalPosition mgl32.Vec2
@@ -39,9 +39,10 @@ type Text struct {
 	eboIndexCount int
 
 	// X1, X2: the lower left and upper right points of a box that bounds the text
-	//         actual screen coordinates
-	X1           Point
-	X2           Point
+	//         in a coordinate system with (0,0) centered in the middle of the screen
+	X1 Point
+	X2 Point
+
 	SetPositionX float32
 	SetPositionY float32
 
@@ -201,26 +202,29 @@ func (t *Text) center() (lowerLeft Point) {
 	return
 }
 
+// Expects the coordinate system to be (0,0) centered on screen
 func (t *Text) SetPosition(x, y float32) {
-	// we are in an orthographic projection state with ranges -1 to 1
-	t.finalPosition[0] = x / t.font.WindowWidth
-	t.finalPosition[1] = y / t.font.WindowHeight
-	if t.IsEdit {
-		t.BoundingBox.finalPosition[0] = x / t.font.WindowWidth
-		t.BoundingBox.finalPosition[1] = y / t.font.WindowHeight
+	// transform to orthographic coordinates ranged -1 to 1 for the shader
+	t.finalPosition[0] = x / (t.font.WindowWidth / 2)
+	t.finalPosition[1] = y / (t.font.WindowHeight / 2)
+	if t.IsDebug {
+		t.BoundingBox.finalPosition[0] = x / (t.font.WindowWidth / 2)
+		t.BoundingBox.finalPosition[1] = y / (t.font.WindowHeight / 2)
 	}
+
+	// used for detecting clicks, hovers, etc
+	t.X1.X += x
+	t.X1.Y += y
+	t.X2.X += x
+	t.X2.Y += y
+
+	// used to build shadow data
 	t.SetPositionX = x
 	t.SetPositionY = y
-
-	// Screen coordinates so -1 to 1 range transform is not required
-	t.X1.X += x / 2
-	t.X1.Y += y / 2
-	t.X2.X += x / 2
-	t.X2.Y += y / 2
 }
 
 func (t *Text) Draw() {
-	if t.IsEdit {
+	if t.IsDebug {
 		t.BoundingBox.Draw()
 	}
 	gl.UseProgram(t.font.program)
@@ -305,9 +309,9 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	t.X2.Y += lowerLeft.Y
 	t.Width = t.X2.X - t.X1.X
 	t.Height = t.X2.Y - t.X1.Y
-	if t.IsEdit {
-		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
-	}
+	//if t.IsDebug { // perhaps this will be a set background option?
+	t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
+	//}
 	return
 }
 
