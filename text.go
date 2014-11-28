@@ -10,6 +10,13 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
+type Align int
+
+const (
+	AlignLeft Align = iota
+	AlignRight
+)
+
 type Text struct {
 	IsDebug bool
 	font    *Font
@@ -38,9 +45,11 @@ type Text struct {
 	eboData       []int32
 	eboIndexCount int
 
-	// X1, X2: the lower left and upper right points of a box that bounds the text
-	//         in a coordinate system with (0,0) centered in the middle of the screen
+	// X1, X2: the lower left and upper right points of a box that bounds the text with a center point (0,0)
+
+	// lower left
 	X1 Point
+	// upper right
 	X2 Point
 
 	SetPositionX float32
@@ -168,7 +177,7 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	t.makeBufferData(indices)
 
 	// find the centered position of the bounding box
-	lowerLeft := t.center()
+	lowerLeft := t.getLowerLeft()
 
 	// reposition the vbo data so that it is centered at (0,0)
 	// according to the orthographic projection being used
@@ -193,7 +202,10 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
 }
 
-func (t *Text) center() (lowerLeft Point) {
+// The block of text is positioned around the center of the screen, which in this case must
+// be considered (0,0).  This is necessary for orthographic projection and scaling to work
+// well together.  If the text is *not* at (0,0), then scaling doesnt produce a direct zoom effect.
+func (t *Text) getLowerLeft() (lowerLeft Point) {
 	lineWidthHalf := (t.X2.X - t.X1.X) / 2
 	lineHeightHalf := (t.X2.Y - t.X1.Y) / 2
 
@@ -202,7 +214,8 @@ func (t *Text) center() (lowerLeft Point) {
 	return
 }
 
-// Expects the coordinate system to be (0,0) centered on screen
+// Requirement prior to calling SetPosition:
+// The text's X1 and X2 values must be the bounding box with center (0,0)
 func (t *Text) SetPosition(x, y float32) {
 	// transform to orthographic coordinates ranged -1 to 1 for the shader
 	t.finalPosition[0] = x / (t.font.WindowWidth / 2)
@@ -221,6 +234,25 @@ func (t *Text) SetPosition(x, y float32) {
 	// used to build shadow data
 	t.SetPositionX = x
 	t.SetPositionY = y
+}
+
+func (t *Text) Justify(align Align) {
+	// calculate left aligned text location
+	sign := 1
+	if align == AlignRight {
+		sign = -1
+	}
+	x := t.SetPositionX + float32(sign)*(t.X2.X-t.X1.X)/2
+	y := t.SetPositionY
+
+	// SetPosition requires the text bounding box be centered on (0,0).
+	// so calculate its original value
+	tX2 := Point{X: (t.X2.X - t.X1.X) / 2, Y: (t.X2.Y - t.X1.Y) / 2}
+	tX1 := Point{X: -tX2.X, Y: -tX2.Y}
+	t.X2 = tX2
+	t.X1 = tX1
+
+	t.SetPosition(x, y)
 }
 
 func (t *Text) Draw() {

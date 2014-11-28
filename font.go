@@ -27,7 +27,7 @@ out vec2 fragment_uv;
 
 // The orthographic projection uses a lower left-hand point of (0,0)
 // 1) We center the text on screen.
-// 2) We perform othographic translformation and then scaling.
+// 2) We perform othographic transformation and then scaling.
 // 3) We move the text to its final resting place.
 // This is all pretty standard I would imagine, but it took me a bit to sort out what has to happen :P
 
