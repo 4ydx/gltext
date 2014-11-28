@@ -25,7 +25,7 @@ type Text struct {
 	finalPosition mgl32.Vec2
 
 	// text color
-	color mgl32.Vec4
+	color mgl32.Vec3
 
 	// scaling the text
 	Scale       float32
@@ -154,8 +154,8 @@ func (t *Text) AddScale(s float32) (changed bool) {
 	return
 }
 
-func (t *Text) SetColor(r, g, b, a float32) {
-	t.color = mgl32.Vec4{r, g, b, a}
+func (t *Text) SetColor(r, g, b float32) {
+	t.color = mgl32.Vec3{r, g, b}
 }
 
 func (t *Text) SetString(fs string, argv ...interface{}) {

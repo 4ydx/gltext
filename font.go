@@ -49,12 +49,8 @@ in vec2 fragment_uv;
 out vec4 fragment_color;
 
 void main() {
-  vec4 color = texture(fragment_texture, fragment_uv);
-  if(color.w > text_lowerbound) {
-    color = fragment_color_adjustment;
-  } else {
-    color = vec4(0,0,0,0);
-  }
+  vec4 color     = texture(fragment_texture, fragment_uv);
+  color.xyz      = fragment_color_adjustment.xyz;
   fragment_color = color;
 }
 ` + "\x00"
