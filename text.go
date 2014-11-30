@@ -159,7 +159,12 @@ func (t *Text) SetColor(r, g, b float32) {
 }
 
 func (t *Text) SetString(fs string, argv ...interface{}) {
-	indices := []rune(fmt.Sprintf(fs, argv...))
+	var indices []rune
+	if len(argv) == 0 {
+		indices = []rune(fs)
+	} else {
+		indices = []rune(fmt.Sprintf(fs, argv...))
+	}
 	if len(indices) == 0 {
 		return
 	}
