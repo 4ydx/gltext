@@ -45,6 +45,9 @@ type Text struct {
 	eboData       []int32
 	eboIndexCount int
 
+	// user definable value bound by the eboIndexCount value
+	RuneCount int
+
 	// X1, X2: the lower left and upper right points of a box that bounds the text with a center point (0,0)
 
 	// lower left
@@ -60,6 +63,10 @@ type Text struct {
 	Height float32
 
 	String string
+}
+
+func (t *Text) GetLength() int {
+	return t.eboIndexCount / 6
 }
 
 func LoadText(f *Font) (t *Text) {
@@ -175,6 +182,7 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 
 	t.vboIndexCount = len(indices) * 4 * 2 * 2 // 4 indexes per rune (containing 2 position + 2 texture)
 	t.eboIndexCount = len(indices) * 6         // each rune requires 6 triangle indices for a quad
+	t.RuneCount = len(indices)
 	t.vboData = make([]float32, t.vboIndexCount, t.vboIndexCount)
 	t.eboData = make([]int32, t.eboIndexCount, t.eboIndexCount)
 
@@ -278,10 +286,14 @@ func (t *Text) Draw() {
 	gl.UniformMatrix4fv(t.font.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
 
 	// draw
+	drawCount := int32(t.RuneCount * 6)
+	if drawCount > int32(t.eboIndexCount) {
+		drawCount = int32(t.eboIndexCount)
+	}
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	gl.BindVertexArray(t.vao)
-	gl.DrawElements(gl.TRIANGLES, int32(t.eboIndexCount), gl.UNSIGNED_INT, nil)
+	gl.DrawElements(gl.TRIANGLES, drawCount, gl.UNSIGNED_INT, nil)
 	gl.BindVertexArray(0)
 	gl.Disable(gl.BLEND)
 }
