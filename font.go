@@ -77,13 +77,6 @@ type Font struct {
 	// The desired color of the text
 	colorUniform int32
 
-	// The background of the image is transparent.  Using an arbitrary
-	// lower limit to distinguish between the background and the text.
-	// There must be a better way that preserves the gradient-like
-	// appearance of the text that the freetype-go library produces.
-	textLowerBoundUniform int32
-	textLowerBound        float32
-
 	// View matrix
 	orthographicMatrixUniform int32
 	orthographicMatrix        mgl32.Mat4
@@ -170,7 +163,6 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f.scaleMatrixUniform = gl.GetUniformLocation(f.program, gl.Str("scale_matrix\x00"))
 	f.fragmentTextureUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_texture\x00"))
 	f.colorUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_color_adjustment\x00"))
-	f.textLowerBoundUniform = gl.GetUniformLocation(f.program, gl.Str("text_lowerbound\x00"))
 	return f, nil
 }
 
@@ -183,8 +175,4 @@ func (f *Font) ResizeWindow(width float32, height float32) {
 func (f *Font) Release() {
 	gl.DeleteTextures(1, &f.textureID)
 	f.config = nil
-}
-
-func (f *Font) SetTextLowerBound(v float32) {
-	f.textLowerBound = v
 }

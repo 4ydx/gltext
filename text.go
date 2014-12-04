@@ -282,7 +282,6 @@ func (t *Text) Draw() {
 
 	// uniforms
 	gl.Uniform1i(t.font.fragmentTextureUniform, 0)
-	gl.Uniform1f(t.font.textLowerBoundUniform, t.font.textLowerBound)
 	gl.Uniform4fv(t.font.colorUniform, 1, &t.color[0])
 	gl.Uniform2fv(t.font.finalPositionUniform, 1, &t.finalPosition[0])
 	gl.UniformMatrix4fv(t.font.orthographicMatrixUniform, 1, false, &t.font.orthographicMatrix[0])
