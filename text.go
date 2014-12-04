@@ -187,6 +187,8 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	t.eboData = make([]int32, t.eboIndexCount, t.eboIndexCount)
 
 	// generate the basic vbo data and bounding box
+	t.X1 = Point{0, 0}
+	t.X2 = Point{0, 0}
 	t.makeBufferData(indices)
 
 	// find the centered position of the bounding box
@@ -196,8 +198,9 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	// according to the orthographic projection being used
 	t.setDataPosition(lowerLeft)
 
-	if t.font.IsDebug {
+	if t.IsDebug {
 		fmt.Printf("bounding box %v %v\n", t.X1, t.X2)
+		fmt.Printf("lower left\n%v\n", lowerLeft)
 		fmt.Printf("text vbo data\n%v\n", t.vboData)
 		fmt.Printf("text ebo data\n%v\n", t.eboData)
 	}
