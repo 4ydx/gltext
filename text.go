@@ -366,6 +366,13 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	return
 }
 
+func (t *Text) HasRune(r rune) bool {
+	glyphs := t.font.config.Glyphs
+	low := t.font.config.Low
+	r -= low
+	return r >= 0 && int(r) < len(glyphs)
+}
+
 // currently only supports left to right text flow
 func (t *Text) makeBufferData(indices []rune) {
 	glyphs := t.font.config.Glyphs
