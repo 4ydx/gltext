@@ -172,6 +172,10 @@ func (f *Font) ResizeWindow(width float32, height float32) {
 	f.orthographicMatrix = mgl32.Ortho2D(-f.WindowWidth/2, f.WindowWidth/2, -f.WindowHeight/2, f.WindowHeight/2)
 }
 
+func (f *Font) GetOrtho() *mgl32.Mat4 {
+	return &f.orthographicMatrix
+}
+
 func (f *Font) Release() {
 	gl.DeleteTextures(1, &f.textureID)
 	f.config = nil
