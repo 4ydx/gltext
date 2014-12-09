@@ -247,7 +247,7 @@ func (t *Text) SetPosition(x, y float32) {
 	t.X2.X += x
 	t.X2.Y += y
 
-	// used to build shadow data
+	// used to build shadow data and for calling SetPosition again when needed
 	t.SetPositionX = x
 	t.SetPositionY = y
 }
@@ -284,7 +284,7 @@ func (t *Text) Draw() {
 	gl.Uniform1i(t.font.fragmentTextureUniform, 0)
 	gl.Uniform4fv(t.font.colorUniform, 1, &t.color[0])
 	gl.Uniform2fv(t.font.finalPositionUniform, 1, &t.finalPosition[0])
-	gl.UniformMatrix4fv(t.font.orthographicMatrixUniform, 1, false, &t.font.orthographicMatrix[0])
+	gl.UniformMatrix4fv(t.font.orthographicMatrixUniform, 1, false, &t.font.OrthographicMatrix[0])
 	gl.UniformMatrix4fv(t.font.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
 
 	// draw
@@ -360,9 +360,9 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	t.X2.Y += lowerLeft.Y
 	t.Width = t.X2.X - t.X1.X
 	t.Height = t.X2.Y - t.X1.Y
-	//if t.IsDebug { // perhaps this will be a set background option?
-	t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
-	//}
+	if t.IsDebug {
+		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
+	}
 	return
 }
 

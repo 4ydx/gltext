@@ -79,7 +79,7 @@ type Font struct {
 
 	// View matrix
 	orthographicMatrixUniform int32
-	orthographicMatrix        mgl32.Mat4
+	OrthographicMatrix        mgl32.Mat4
 
 	// Scale the resulting text
 	scaleMatrixUniform int32
@@ -169,11 +169,7 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 func (f *Font) ResizeWindow(width float32, height float32) {
 	f.WindowWidth = width
 	f.WindowHeight = height
-	f.orthographicMatrix = mgl32.Ortho2D(-f.WindowWidth/2, f.WindowWidth/2, -f.WindowHeight/2, f.WindowHeight/2)
-}
-
-func (f *Font) GetOrtho() *mgl32.Mat4 {
-	return &f.orthographicMatrix
+	f.OrthographicMatrix = mgl32.Ortho2D(-f.WindowWidth/2, f.WindowWidth/2, -f.WindowHeight/2, f.WindowHeight/2)
 }
 
 func (f *Font) Release() {

@@ -49,7 +49,6 @@ type BoundingBox struct {
 
 	// transform to orthographic projection
 	orthographicMatrixUniform int32
-	orthographicMatrix        mgl32.Mat4
 
 	vao           uint32
 	vbo           uint32
@@ -96,7 +95,7 @@ func loadBoundingBox(f *Font, X1 Point, X2 Point) (b *BoundingBox, err error) {
 	b.orthographicMatrixUniform = gl.GetUniformLocation(b.program, gl.Str("orthographic_matrix\x00"))
 
 	// size of glfloat
-	glfloat_size := int32(4)
+	glfloatSize := int32(4)
 
 	gl.GenVertexArrays(1, &b.vao)
 	gl.GenBuffers(1, &b.vbo)
@@ -118,10 +117,10 @@ func loadBoundingBox(f *Font, X1 Point, X2 Point) (b *BoundingBox, err error) {
 		0,
 		gl.PtrOffset(0),
 	)
-	gl.BufferData(gl.ARRAY_BUFFER, int(glfloat_size)*b.vboIndexCount, gl.Ptr(b.vboData), gl.DYNAMIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, int(glfloatSize)*b.vboIndexCount, gl.Ptr(b.vboData), gl.DYNAMIC_DRAW)
 
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*b.eboIndexCount, gl.Ptr(b.eboData), gl.DYNAMIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, int(glfloatSize)*b.eboIndexCount, gl.Ptr(b.eboData), gl.DYNAMIC_DRAW)
 	gl.BindVertexArray(0)
 
 	// not necesssary, but i just want to better understand using vertex arrays
@@ -142,7 +141,7 @@ func (b *BoundingBox) Draw() {
 
 	// uniforms
 	gl.Uniform2fv(b.finalPositionUniform, 1, &b.finalPosition[0])
-	gl.UniformMatrix4fv(b.orthographicMatrixUniform, 1, false, &b.font.orthographicMatrix[0])
+	gl.UniformMatrix4fv(b.orthographicMatrixUniform, 1, false, &b.font.OrthographicMatrix[0])
 
 	// draw
 	gl.BindVertexArray(b.vao)
