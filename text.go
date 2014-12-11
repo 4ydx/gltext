@@ -45,8 +45,11 @@ type Text struct {
 	eboData       []int32
 	eboIndexCount int
 
-	// user definable value bound by the eboIndexCount value
+	// determines how many prefix characters are drawn on screen
 	RuneCount int
+
+	// no longer than this string
+	MaxRuneCount int
 
 	// X1, X2: the lower left and upper right points of a box that bounds the text with a center point (0,0)
 
@@ -175,6 +178,9 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	if len(indices) == 0 {
 		return
 	}
+	if t.MaxRuneCount > 0 && len(indices) > t.MaxRuneCount+1 {
+		indices = indices[0:t.MaxRuneCount]
+	}
 	t.String = string(indices)
 
 	// ebo, vbo data
@@ -291,6 +297,9 @@ func (t *Text) Draw() {
 	drawCount := int32(t.RuneCount * 6)
 	if drawCount > int32(t.eboIndexCount) {
 		drawCount = int32(t.eboIndexCount)
+	}
+	if drawCount < 0 {
+		drawCount = 0
 	}
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
