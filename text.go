@@ -222,6 +222,10 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	// not necesssary, but i just want to better understand using vertex arrays
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+
+	// SetString can be called at anytime.  we want to make sure that if the user is updating the text,
+	// the previous position will be maintained
+	t.SetPosition(t.SetPositionX, t.SetPositionY)
 }
 
 // The block of text is positioned around the center of the screen, which in this case must
