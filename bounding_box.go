@@ -6,7 +6,7 @@ package gltext
 
 import (
 	"fmt"
-	"github.com/go-gl/glow/gl-core/3.3/gl"
+	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
