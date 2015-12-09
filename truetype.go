@@ -5,8 +5,9 @@
 package gltext
 
 import (
-	"code.google.com/p/freetype-go/freetype"
-	"code.google.com/p/freetype-go/freetype/truetype"
+	"github.com/golang/freetype"
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/math/fixed"
 	"image"
 	"image/draw"
 	"io"
@@ -20,7 +21,7 @@ import (
 //
 // The low and high values determine the lower and upper rune limits
 // we should load for this font. For standard ASCII this would be: 32, 127.
-func LoadTruetype(r io.Reader, scale int32, low, high rune) (*Font, error) {
+func LoadTruetype(r io.Reader, scale fixed.Int26_6, low, high rune) (*Font, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -43,14 +44,13 @@ func LoadTruetype(r io.Reader, scale int32, low, high rune) (*Font, error) {
 	// We limit the image to 16 glyphs per row. Then add as many rows as
 	// needed to encompass all glyphs, while making sure the resulting image
 	// has power-of-two dimensions.
-	gc := int32(len(fc.Glyphs))
-	glyphsPerRow := int32(16)
+	gc := fixed.Int26_6(len(fc.Glyphs))
+	glyphsPerRow := fixed.Int26_6(16)
 	glyphsPerCol := (gc / glyphsPerRow) + 1
 
 	gb := ttf.Bounds(scale)
-	gw := (gb.XMax - gb.XMin)
-	// why?
-	gh := (gb.YMax - gb.YMin) + 5
+	gw := (gb.Max.X - gb.Min.X)
+	gh := (gb.Max.Y - gb.Min.Y) + 5 // why?
 
 	iw := Pow2(uint32(gw * glyphsPerRow))
 	ih := Pow2(uint32(gh * glyphsPerCol))
@@ -75,7 +75,7 @@ func LoadTruetype(r io.Reader, scale int32, low, high rune) (*Font, error) {
 	// For each glyph, we also create a corresponding Glyph structure
 	// for our Charset. It contains the appropriate glyph coordinate offsets.
 	var gi int
-	var gx, gy int32
+	var gx, gy fixed.Int26_6
 
 	for ch := low; ch <= high; ch++ {
 		index := ttf.Index(ch)
@@ -87,7 +87,7 @@ func LoadTruetype(r io.Reader, scale int32, low, high rune) (*Font, error) {
 		fc.Glyphs[gi].Width = int(gw)
 		fc.Glyphs[gi].Height = int(gh)
 
-		pt := freetype.Pt(int(gx), int(gy)+int(c.PointToFix32(float64(scale))>>8))
+		pt := freetype.Pt(int(gx), int(gy)+int(scale))
 		c.DrawString(string(ch), pt)
 
 		if gi%16 == 0 {
