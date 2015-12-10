@@ -81,10 +81,12 @@ func loadBoundingBox(f *Font, X1 Point, X2 Point) (b *BoundingBox, err error) {
 	b.vboData = make([]float32, b.vboIndexCount, b.vboIndexCount)
 	b.eboData = make([]int32, b.eboIndexCount, b.eboIndexCount)
 	b.makeBufferData(X1, X2)
-	if f.IsDebug {
-		fmt.Printf("bounding %v %v\n", X1, X2)
-		fmt.Printf("bounding vbo data\n%v\n", b.vboData)
-		fmt.Printf("bounding ebo data\n%v\n", b.eboData)
+
+	if IsDebug {
+		prefix := DebugPrefix()
+		fmt.Printf("%s bounding %v %v\n", prefix, X1, X2)
+		fmt.Printf("%s bounding vbo data\n%v\n", prefix, b.vboData)
+		fmt.Printf("%s bounding ebo data\n%v\n", prefix, b.eboData)
 	}
 
 	// attributes

@@ -18,8 +18,7 @@ const (
 )
 
 type Text struct {
-	IsDebug bool
-	font    *Font
+	font *Font
 
 	// final position on screen
 	finalPosition mgl32.Vec2
@@ -72,17 +71,17 @@ func (t *Text) GetLength() int {
 	return t.eboIndexCount / 6
 }
 
-func LoadText(f *Font) (t *Text) {
-	t = new(Text)
+// NewText creates a new text object with scaling boundaries
+// the rest state of the text when not being interacted with
+// is scaleMin.  most likely one wants to use 1.0.
+func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
+	t = &Text{}
 	t.font = f
 
 	// text hover values
 	// "resting state" of a text object is the min scale
-	t.ScaleMin = 1.0
-	t.ScaleMax = 1.1
+	t.ScaleMin, t.ScaleMax = scaleMin, scaleMax
 	t.SetScale(1)
-
-	// size of glfloat
 	glfloat_size := int32(4)
 
 	// stride of the buffered data
@@ -138,36 +137,38 @@ func LoadText(f *Font) (t *Text) {
 func (t *Text) Release() {
 	gl.DeleteBuffers(1, &t.vbo)
 	gl.DeleteBuffers(1, &t.ebo)
-	gl.DeleteBuffers(1, &t.vao)
+	gl.DeleteVertexArrays(1, &t.vao)
 }
 
-func (t *Text) SetScale(s float32) (changed bool) {
+// SetScale returns true when a change occured
+func (t *Text) SetScale(s float32) bool {
 	if s > t.ScaleMax || s < t.ScaleMin {
-		return
+		return false
 	}
-	changed = true
 	t.Scale = s
 	t.scaleMatrix = mgl32.Scale3D(s, s, s)
-	return
+	return true
 }
 
-func (t *Text) AddScale(s float32) (changed bool) {
+// AddScale returns true when a change occured
+func (t *Text) AddScale(s float32) bool {
 	if s < 0 && t.Scale <= t.ScaleMin {
-		return
+		return false
 	}
 	if s > 0 && t.Scale >= t.ScaleMax {
-		return
+		return false
 	}
-	changed = true
 	t.Scale += s
 	t.scaleMatrix = mgl32.Scale3D(t.Scale, t.Scale, t.Scale)
-	return
+	return true
 }
 
 func (t *Text) SetColor(r, g, b float32) {
 	t.color = mgl32.Vec3{r, g, b}
 }
 
+// SetString performs creates new vbo and ebo objects as well as to perform all
+// binding required for displaying text to screen
 func (t *Text) SetString(fs string, argv ...interface{}) {
 	var indices []rune
 	if len(argv) == 0 {
@@ -204,11 +205,12 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	// according to the orthographic projection being used
 	t.setDataPosition(lowerLeft)
 
-	if t.IsDebug {
-		fmt.Printf("bounding box %v %v\n", t.X1, t.X2)
-		fmt.Printf("lower left\n%v\n", lowerLeft)
-		fmt.Printf("text vbo data\n%v\n", t.vboData)
-		fmt.Printf("text ebo data\n%v\n", t.eboData)
+	if IsDebug {
+		prefix := DebugPrefix()
+		fmt.Printf("%s bounding box %v %v\n", prefix, t.X1, t.X2)
+		fmt.Printf("%s lower left\n%v\n", prefix, lowerLeft)
+		fmt.Printf("%s text vbo data\n%v\n", prefix, t.vboData)
+		fmt.Printf("%s text ebo data\n%v\n", prefix, t.eboData)
 	}
 	gl.BindVertexArray(t.vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
@@ -219,7 +221,7 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 		gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*t.eboIndexCount, gl.Ptr(t.eboData), gl.DYNAMIC_DRAW)
 	gl.BindVertexArray(0)
 
-	// not necesssary, but i just want to better understand using vertex arrays
+	// possibly not necesssary?
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
 
@@ -243,10 +245,13 @@ func (t *Text) getLowerLeft() (lowerLeft Point) {
 // Requirement prior to calling SetPosition:
 // The text's X1 and X2 values must be the bounding box with center (0,0)
 func (t *Text) SetPosition(x, y float32) {
+	if t.X1.X == 0 && t.X1.Y == 0 && t.X2.X == 0 && t.X2.Y == 0 {
+		TextDebug("Bounding Box Is Unset")
+	}
 	// transform to orthographic coordinates ranged -1 to 1 for the shader
 	t.finalPosition[0] = x / (t.font.WindowWidth / 2)
 	t.finalPosition[1] = y / (t.font.WindowHeight / 2)
-	if t.IsDebug {
+	if IsDebug {
 		t.BoundingBox.finalPosition[0] = x / (t.font.WindowWidth / 2)
 		t.BoundingBox.finalPosition[1] = y / (t.font.WindowHeight / 2)
 	}
@@ -282,7 +287,7 @@ func (t *Text) Justify(align Align) {
 }
 
 func (t *Text) Draw() {
-	if t.IsDebug {
+	if IsDebug {
 		t.BoundingBox.Draw()
 	}
 	gl.UseProgram(t.font.program)
@@ -366,6 +371,7 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 		t.vboData[index] += lowerLeft.Y
 		index += 3
 	}
+
 	// update bounding box
 	t.X1.X += lowerLeft.X
 	t.X2.X += lowerLeft.X
@@ -373,7 +379,9 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	t.X2.Y += lowerLeft.Y
 	t.Width = t.X2.X - t.X1.X
 	t.Height = t.X2.Y - t.X1.Y
-	if t.IsDebug {
+
+	// prepare objects for drawing the bounding box
+	if IsDebug {
 		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
 	}
 	return

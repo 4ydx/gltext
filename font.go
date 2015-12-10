@@ -56,8 +56,6 @@ void main() {
 ` + "\x00"
 
 type Font struct {
-	IsDebug bool
-
 	config         *FontConfig // Character set for this font.
 	textureID      uint32      // Holds the glyph texture id.
 	maxGlyphWidth  int         // Largest glyph width.
@@ -90,8 +88,8 @@ type Font struct {
 	WindowHeight  float32
 }
 
-func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
-	f = new(Font)
+func NewFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
+	f = &Font{}
 	f.config = config
 
 	// Resize image to next power-of-two.
@@ -111,7 +109,7 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	}
 
 	// save to disk for testing
-	if f.IsDebug {
+	if IsDebug {
 		file, err := os.Create("out.png")
 		if err != nil {
 			panic(err)
@@ -163,6 +161,7 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f.scaleMatrixUniform = gl.GetUniformLocation(f.program, gl.Str("scale_matrix\x00"))
 	f.fragmentTextureUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_texture\x00"))
 	f.colorUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_color_adjustment\x00"))
+
 	return f, nil
 }
 
@@ -174,5 +173,4 @@ func (f *Font) ResizeWindow(width float32, height float32) {
 
 func (f *Font) Release() {
 	gl.DeleteTextures(1, &f.textureID)
-	f.config = nil
 }

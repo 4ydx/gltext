@@ -50,7 +50,7 @@ func LoadTruetype(r io.Reader, scale fixed.Int26_6, low, high rune) (*Font, erro
 
 	gb := ttf.Bounds(scale)
 	gw := (gb.Max.X - gb.Min.X)
-	gh := (gb.Max.Y - gb.Min.Y) + 5 // why?
+	gh := (gb.Max.Y - gb.Min.Y)
 
 	iw := Pow2(uint32(gw * glyphsPerRow))
 	ih := Pow2(uint32(gh * glyphsPerCol))
@@ -98,5 +98,5 @@ func LoadTruetype(r io.Reader, scale fixed.Int26_6, low, high rune) (*Font, erro
 		}
 		gi++
 	}
-	return loadFont(img, &fc)
+	return NewFont(img, &fc)
 }
