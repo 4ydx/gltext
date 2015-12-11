@@ -40,10 +40,8 @@ func NewTruetype(r io.Reader, scale fixed.Int26_6, low, high rune, runesPerRow f
 	fc.Glyphs = make(Charset, high-low+1)
 
 	// Create an image, large enough to store all requested glyphs.
-	//
-	// We limit the image to 16 glyphs per row. Then add as many rows as
-	// needed to encompass all glyphs, while making sure the resulting image
-	// has power-of-two dimensions.
+	// The resulting image is set to power of 2 dimensions so it might be wise to adjust the runesPerRow
+	// parameter to ensure that unnecessary space isn't created based on the character set being used
 	gc := fixed.Int26_6(len(fc.Glyphs))
 	runesPerCol := (gc / runesPerRow) + 1
 
@@ -68,11 +66,8 @@ func NewTruetype(r io.Reader, scale fixed.Int26_6, low, high rune, runesPerRow f
 	c.SetDst(fc.Image)
 	c.SetSrc(fg)
 
-	// Iterate over all relevant glyphs in the truetype font and
-	// draw them all to the image buffer.
-	//
-	// For each glyph, we also create a corresponding Glyph structure
-	// for our Charset. It contains the appropriate glyph coordinate offsets.
+	// Iterate over all relevant glyphs in the truetype font and draw them all to the image buffer
+	// Add Glyph objects to track various glyph values
 	var gi fixed.Int26_6
 	var gx, gy fixed.Int26_6
 

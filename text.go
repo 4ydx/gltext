@@ -365,7 +365,7 @@ func (t *Text) HasRune(r rune) bool {
 	return r >= 0 && int(r) < len(glyphs)
 }
 
-// currently only supports left to right text flow
+// makeBufferData positions quads for drawing the text in the indices parameter using glyph dimensions
 func (t *Text) makeBufferData(indices []rune) {
 	glyphs := t.font.Config.Glyphs
 	low := t.font.Config.Low
@@ -437,11 +437,6 @@ func (t *Text) makeBufferData(indices []rune) {
 			t.vboData[vboIndex] = tP1.Y
 			vboIndex++
 
-			lineX += advance
-			if IsDebug {
-				fmt.Printf("-> %f\n", lineX)
-			}
-
 			// ebo data
 			t.eboData[eboIndex] = 0 + eboOffset
 			eboIndex++
@@ -457,6 +452,12 @@ func (t *Text) makeBufferData(indices []rune) {
 			t.eboData[eboIndex] = 3 + eboOffset
 			eboIndex++
 			eboOffset += 4
+
+			// shift to the right
+			lineX += advance
+			if IsDebug {
+				fmt.Printf("-> %f\n", lineX)
+			}
 		}
 	}
 	return
