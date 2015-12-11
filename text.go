@@ -170,12 +170,7 @@ func (t *Text) SetColor(r, g, b float32) {
 // SetString performs creates new vbo and ebo objects as well as to perform all
 // binding required for displaying text to screen
 func (t *Text) SetString(fs string, argv ...interface{}) {
-	var indices []rune
-	if len(argv) == 0 {
-		indices = []rune(fs)
-	} else {
-		indices = []rune(fmt.Sprintf(fs, argv...))
-	}
+	indices := []rune(fmt.Sprintf(fs, argv...))
 	if len(indices) == 0 {
 		return
 	}
@@ -318,30 +313,6 @@ func (t *Text) Draw() {
 	gl.Disable(gl.BLEND)
 }
 
-func (t *Text) getBoundingBox(vboIndex int) {
-	// index -4: x, index -3: y, index -2: uv's x, index -1 uv's y
-	x := t.vboData[vboIndex-4]
-	y := t.vboData[vboIndex-3]
-
-	if vboIndex-4 == 0 {
-		t.X1.X = x
-		t.X1.Y = y
-	} else {
-		if x < t.X1.X {
-			t.X1.X = x
-		}
-		if y < t.X1.Y {
-			t.X1.Y = y
-		}
-		if x > t.X2.X {
-			t.X2.X = x
-		}
-		if y > t.X2.Y {
-			t.X2.Y = y
-		}
-	}
-}
-
 // all text originally sits at point (0,0) which is the
 // lower left hand corner of the screen.
 func (t *Text) setDataPosition(lowerLeft Point) (err error) {
@@ -403,18 +374,28 @@ func (t *Text) makeBufferData(indices []rune) {
 	eboIndex := 0
 	lineX := float32(0)
 	eboOffset := int32(0)
-	for _, r := range indices {
+	for i, r := range indices {
 		r -= low
 		if r >= 0 && int(r) < len(glyphs) {
 			if IsDebug {
 				prefix := DebugPrefix()
-				fmt.Printf("%s rune %v\n", prefix, glyphs[r])
+				fmt.Printf("%s rune %+v line at %f", prefix, glyphs[r], lineX)
 			}
 			vw := float32(glyphs[r].Width)
 			vh := float32(glyphs[r].Height)
+
+			// variable width characters will produce a bounding box that is just
+			// a bit too long on the right-hand side unless we trim off the excess
+			// when processing the right-most character
+			advance := float32(glyphs[r].Advance)
+			trim := float32(0)
+			if i == len(indices)-1 {
+				trim = vw - advance
+			}
 			tP1, tP2 := glyphs[r].GetIndices(t.font)
 
 			// counter-clockwise quad
+			// notice that the bounding box value X2 is being adjusted as characters are added
 
 			// index (0,0)
 			t.vboData[vboIndex] = lineX // position
@@ -425,10 +406,9 @@ func (t *Text) makeBufferData(indices []rune) {
 			vboIndex++
 			t.vboData[vboIndex] = tP2.Y
 			vboIndex++
-			t.getBoundingBox(vboIndex)
 
 			// index (1,0)
-			t.vboData[vboIndex] = lineX + vw
+			t.vboData[vboIndex], t.X2.X = lineX+vw, lineX+vw-trim
 			vboIndex++
 			t.vboData[vboIndex] = 0
 			vboIndex++
@@ -436,18 +416,16 @@ func (t *Text) makeBufferData(indices []rune) {
 			vboIndex++
 			t.vboData[vboIndex] = tP2.Y
 			vboIndex++
-			t.getBoundingBox(vboIndex)
 
 			// index (1,1)
 			t.vboData[vboIndex] = lineX + vw
 			vboIndex++
-			t.vboData[vboIndex] = vh
+			t.vboData[vboIndex], t.X2.Y = vh, vh
 			vboIndex++
 			t.vboData[vboIndex] = tP2.X
 			vboIndex++
 			t.vboData[vboIndex] = tP1.Y
 			vboIndex++
-			t.getBoundingBox(vboIndex)
 
 			// index (0,1)
 			t.vboData[vboIndex] = lineX
@@ -458,10 +436,11 @@ func (t *Text) makeBufferData(indices []rune) {
 			vboIndex++
 			t.vboData[vboIndex] = tP1.Y
 			vboIndex++
-			t.getBoundingBox(vboIndex)
 
-			advance := float32(glyphs[r].Advance)
 			lineX += advance
+			if IsDebug {
+				fmt.Printf("-> %f\n", lineX)
+			}
 
 			// ebo data
 			t.eboData[eboIndex] = 0 + eboOffset

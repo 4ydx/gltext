@@ -29,7 +29,7 @@ type FontConfig struct {
 
 	// Glyphs holds a set of glyph descriptors, defining the location,
 	// size and advance of each glyph in the sprite sheet.
-	Glyphs Charset `json:"glyphs"`
+	Glyphs Charset
 
 	Image *image.RGBA `json:"-"`
 }
