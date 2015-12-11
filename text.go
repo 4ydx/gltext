@@ -395,7 +395,7 @@ func (t *Text) makeBufferData(indices []rune) {
 			tP1, tP2 := glyphs[r].GetIndices(t.font)
 
 			// counter-clockwise quad
-			// notice that the bounding box value X2 is being adjusted as characters are added
+			// the bounding box value X2 is being expanded as characters are added
 
 			// index (0,0)
 			t.vboData[vboIndex] = lineX // position
@@ -407,7 +407,7 @@ func (t *Text) makeBufferData(indices []rune) {
 			t.vboData[vboIndex] = tP2.Y
 			vboIndex++
 
-			// index (1,0)
+			// index (1,0) - expanding X2
 			t.vboData[vboIndex], t.X2.X = lineX+vw, lineX+vw-trim
 			vboIndex++
 			t.vboData[vboIndex] = 0
@@ -417,7 +417,7 @@ func (t *Text) makeBufferData(indices []rune) {
 			t.vboData[vboIndex] = tP2.Y
 			vboIndex++
 
-			// index (1,1)
+			// index (1,1) - expanding X2
 			t.vboData[vboIndex] = lineX + vw
 			vboIndex++
 			t.vboData[vboIndex], t.X2.Y = vh, vh

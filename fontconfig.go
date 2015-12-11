@@ -7,6 +7,7 @@ package gltext
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/gif"
@@ -14,6 +15,7 @@ import (
 	"image/png"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 // Direction represents the direction in which strings should be rendered.
@@ -31,11 +33,11 @@ type FontConfig struct {
 	// size and advance of each glyph in the sprite sheet.
 	Glyphs Charset
 
-	Image *image.RGBA `json:"-"`
+	Image *image.NRGBA `json:"-"`
 }
 
 // Load reads font configuration data from the given JSON encoded stream.
-func (fc *FontConfig) Load(rootPath string, scale int) (err error) {
+func (fc *FontConfig) Load(rootPath string) (err error) {
 	file := fmt.Sprintf("%s/font.config", rootPath)
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -45,11 +47,13 @@ func (fc *FontConfig) Load(rootPath string, scale int) (err error) {
 	if err != nil {
 		return err
 	}
-	fc.Image, err = LoadImage(rootPath, scale)
+	fmt.Printf("%+v\n", time.Now())
+	fc.Image, err = LoadImage(rootPath)
 	if err != nil {
 		return err
 	}
-	fc.Glyphs.Scale(scale)
+	fmt.Printf("%+v\n", time.Now())
+	fc.Glyphs.Scale(1)
 	return nil
 }
 
@@ -72,7 +76,7 @@ func (fc *FontConfig) Save(rootPath string) (err error) {
 	return
 }
 
-func LoadImage(rootPath string, scale int) (*image.RGBA, error) {
+func LoadImage(rootPath string) (*image.NRGBA, error) {
 	file := fmt.Sprintf("%s/image.png", rootPath)
 	img, err := os.Open(file)
 	if err != nil {
@@ -82,10 +86,14 @@ func LoadImage(rootPath string, scale int) (*image.RGBA, error) {
 	if err != nil {
 		return nil, err
 	}
-	return toRGBA(pix, scale), nil
+	p, ok := pix.(*image.NRGBA)
+	if ok {
+		return p, nil
+	}
+	return nil, errors.New("Not a NRGBA image.")
 }
 
-func SaveImage(rootPath string, img *image.RGBA) error {
+func SaveImage(rootPath string, img *image.NRGBA) error {
 	file := fmt.Sprintf("%s/image.png", rootPath)
 	image, err := os.Create(file)
 	if err != nil {

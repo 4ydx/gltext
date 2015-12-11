@@ -7,7 +7,7 @@ package gltext
 import (
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
-	"image"
+	//"image"
 )
 
 var fontVertexShaderSource string = `
@@ -90,7 +90,7 @@ func NewFont(config *FontConfig) (f *Font, err error) {
 	f.Config = config
 
 	// Resize image to next power-of-two.
-	config.Image = Pow2Image(config.Image).(*image.RGBA)
+	// config.Image = Pow2Image(config.Image).(*image.RGBA)
 	ib := config.Image.Bounds()
 
 	f.textureWidth = float32(ib.Dx())

@@ -56,7 +56,7 @@ func NewTruetype(r io.Reader, scale fixed.Int26_6, low, high rune, runesPerRow f
 
 	fg, bg := image.White, image.Transparent
 	rect := image.Rect(0, 0, int(iw), int(ih))
-	fc.Image = image.NewRGBA(rect)
+	fc.Image = image.NewNRGBA(rect)
 	draw.Draw(fc.Image, fc.Image.Bounds(), bg, image.ZP, draw.Src)
 
 	// Use a freetype context to do the drawing.
@@ -100,9 +100,9 @@ func NewTruetype(r io.Reader, scale fixed.Int26_6, low, high rune, runesPerRow f
 	return NewFont(&fc)
 }
 
-func LoadTruetype(rootPath string, scale int) (*Font, error) {
+func LoadTruetype(rootPath string) (*Font, error) {
 	var fc FontConfig
-	err := fc.Load(rootPath, scale)
+	err := fc.Load(rootPath)
 	if err != nil {
 		return nil, err
 	}
