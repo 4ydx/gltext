@@ -388,16 +388,16 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 }
 
 func (t *Text) HasRune(r rune) bool {
-	glyphs := t.font.config.Glyphs
-	low := t.font.config.Low
+	glyphs := t.font.Config.Glyphs
+	low := t.font.Config.Low
 	r -= low
 	return r >= 0 && int(r) < len(glyphs)
 }
 
 // currently only supports left to right text flow
 func (t *Text) makeBufferData(indices []rune) {
-	glyphs := t.font.config.Glyphs
-	low := t.font.config.Low
+	glyphs := t.font.Config.Glyphs
+	low := t.font.Config.Low
 
 	vboIndex := 0
 	eboIndex := 0
@@ -406,6 +406,10 @@ func (t *Text) makeBufferData(indices []rune) {
 	for _, r := range indices {
 		r -= low
 		if r >= 0 && int(r) < len(glyphs) {
+			if IsDebug {
+				prefix := DebugPrefix()
+				fmt.Printf("%s rune %v\n", prefix, glyphs[r])
+			}
 			vw := float32(glyphs[r].Width)
 			vh := float32(glyphs[r].Height)
 			tP1, tP2 := glyphs[r].GetIndices(t.font)

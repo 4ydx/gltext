@@ -21,7 +21,7 @@ import (
 //
 // The low and high values determine the lower and upper rune limits
 // we should load for this font. For standard ASCII this would be: 32, 127.
-func LoadTruetype(r io.Reader, scale fixed.Int26_6, low, high rune) (*Font, error) {
+func NewTruetype(r io.Reader, scale fixed.Int26_6, low, high rune, runesPerRow fixed.Int26_6) (*Font, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -45,28 +45,27 @@ func LoadTruetype(r io.Reader, scale fixed.Int26_6, low, high rune) (*Font, erro
 	// needed to encompass all glyphs, while making sure the resulting image
 	// has power-of-two dimensions.
 	gc := fixed.Int26_6(len(fc.Glyphs))
-	glyphsPerRow := fixed.Int26_6(16)
-	glyphsPerCol := (gc / glyphsPerRow) + 1
+	runesPerCol := (gc / runesPerRow) + 1
 
 	gb := ttf.Bounds(scale)
 	gw := (gb.Max.X - gb.Min.X)
 	gh := (gb.Max.Y - gb.Min.Y)
 
-	iw := Pow2(uint32(gw * glyphsPerRow))
-	ih := Pow2(uint32(gh * glyphsPerCol))
+	iw := Pow2(uint32(gw * runesPerRow))
+	ih := Pow2(uint32(gh * runesPerCol))
 
 	fg, bg := image.White, image.Transparent
 	rect := image.Rect(0, 0, int(iw), int(ih))
-	img := image.NewRGBA(rect)
-	draw.Draw(img, img.Bounds(), bg, image.ZP, draw.Src)
+	fc.Image = image.NewRGBA(rect)
+	draw.Draw(fc.Image, fc.Image.Bounds(), bg, image.ZP, draw.Src)
 
 	// Use a freetype context to do the drawing.
 	c := freetype.NewContext()
 	c.SetDPI(72) // Do not change this.  It is required in order to have a properly aligned bounding box!!!
 	c.SetFont(ttf)
 	c.SetFontSize(float64(scale))
-	c.SetClip(img.Bounds())
-	c.SetDst(img)
+	c.SetClip(fc.Image.Bounds())
+	c.SetDst(fc.Image)
 	c.SetSrc(fg)
 
 	// Iterate over all relevant glyphs in the truetype font and
@@ -74,7 +73,7 @@ func LoadTruetype(r io.Reader, scale fixed.Int26_6, low, high rune) (*Font, erro
 	//
 	// For each glyph, we also create a corresponding Glyph structure
 	// for our Charset. It contains the appropriate glyph coordinate offsets.
-	var gi int
+	var gi fixed.Int26_6
 	var gx, gy fixed.Int26_6
 
 	for ch := low; ch <= high; ch++ {
@@ -90,7 +89,7 @@ func LoadTruetype(r io.Reader, scale fixed.Int26_6, low, high rune) (*Font, erro
 		pt := freetype.Pt(int(gx), int(gy)+int(c.PointToFixed(float64(scale))>>6))
 		c.DrawString(string(ch), pt)
 
-		if gi%16 == 0 {
+		if gi%runesPerRow == 0 {
 			gx = 0
 			gy += gh
 		} else {
@@ -98,5 +97,14 @@ func LoadTruetype(r io.Reader, scale fixed.Int26_6, low, high rune) (*Font, erro
 		}
 		gi++
 	}
-	return NewFont(img, &fc)
+	return NewFont(&fc)
+}
+
+func LoadTruetype(rootPath string, scale int) (*Font, error) {
+	var fc FontConfig
+	err := fc.Load(rootPath, scale)
+	if err != nil {
+		return nil, err
+	}
+	return NewFont(&fc)
 }

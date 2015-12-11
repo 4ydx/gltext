@@ -5,12 +5,9 @@
 package gltext
 
 import (
-	"bufio"
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"image"
-	"image/png"
-	"os"
 )
 
 var fontVertexShaderSource string = `
@@ -56,7 +53,7 @@ void main() {
 ` + "\x00"
 
 type Font struct {
-	config         *FontConfig // Character set for this font.
+	Config         *FontConfig // Character set for this font.
 	textureID      uint32      // Holds the glyph texture id.
 	maxGlyphWidth  int         // Largest glyph width.
 	maxGlyphHeight int         // Largest glyph height.
@@ -88,13 +85,13 @@ type Font struct {
 	WindowHeight  float32
 }
 
-func NewFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
+func NewFont(config *FontConfig) (f *Font, err error) {
 	f = &Font{}
-	f.config = config
+	f.Config = config
 
 	// Resize image to next power-of-two.
-	img = Pow2Image(img).(*image.RGBA)
-	ib := img.Bounds()
+	config.Image = Pow2Image(config.Image).(*image.RGBA)
+	ib := config.Image.Bounds()
 
 	f.textureWidth = float32(ib.Dx())
 	f.textureHeight = float32(ib.Dy())
@@ -110,20 +107,9 @@ func NewFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 
 	// save to disk for testing
 	if IsDebug {
-		file, err := os.Create("out.png")
+		err = SaveImage(".", config.Image)
 		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-
-		b := bufio.NewWriter(file)
-		err = png.Encode(b, img)
-		if err != nil {
-			panic(err)
-		}
-		err = b.Flush()
-		if err != nil {
-			panic(err)
+			return f, err
 		}
 	}
 
@@ -141,7 +127,7 @@ func NewFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 		0,
 		gl.RGBA,
 		gl.UNSIGNED_BYTE,
-		gl.Ptr(img.Pix),
+		gl.Ptr(config.Image.Pix),
 	)
 	gl.BindTexture(gl.TEXTURE_2D, 0)
 
