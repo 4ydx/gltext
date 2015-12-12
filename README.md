@@ -11,7 +11,7 @@ There do seem to be issues with the dimensions reported by freetype-go unfortuna
 
 Unicode support is based on the underlying truetype font being used (or bitmap).
 
-![Alt text](/example.gif?raw=true "Simple Screenshot")
+![Alt text](/example/example.png?raw=true "Simple Screenshot")
 
 ### Install
 
