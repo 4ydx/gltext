@@ -57,22 +57,25 @@ func (fc *FontConfig) Load(rootPath string) (err error) {
 }
 
 // Save writes font configuration data to the given stream as JSON data.
-func (fc *FontConfig) Save(rootPath string) (err error) {
+func (fc *FontConfig) Save(rootPath string) error {
 	data, err := json.MarshalIndent(fc, "", "  ")
 	if err != nil {
-		return
+		return err
 	}
 	file := fmt.Sprintf("%s/font.config", rootPath)
 	err = ioutil.WriteFile(file, data, 0600)
 	if err != nil {
-		return
+		return err
+	}
+	if fc.Image == nil {
+		return errors.New("Should not be nil.")
 	}
 	err = SaveImage(rootPath, fc.Image)
 	if err != nil {
-		return
+		return err
 	}
 	err = ioutil.WriteFile(file, data, 0600)
-	return
+	return err
 }
 
 func LoadImage(rootPath string) (*image.NRGBA, error) {
@@ -105,9 +108,5 @@ func SaveImage(rootPath string, img *image.NRGBA) error {
 	if err != nil {
 		return err
 	}
-	err = b.Flush()
-	if err != nil {
-		return err
-	}
-	return nil
+	return b.Flush()
 }
