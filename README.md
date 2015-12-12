@@ -19,17 +19,13 @@ Unicode support is based on the underlying truetype font being used (or bitmap).
 
 ### Example
 
-* Refer to https://github.com/4ydx/gltext_example as an example.
+* Provided using Japanese text.
 
 ### Dependencies
 
-This packages uses [freetype-go](https://code.google.com/p/freetype-go) which is licensed 
+This packages uses [freetype-go](https://github.com/golang/freetype) which is licensed 
 under GPLv2 and FTL licenses. You can choose which one is a better fit for your 
 use case but FTL requires you to give some form of credit to Freetype.org
-
-You can read the [GPLv2](https://code.google.com/p/freetype-go/source/browse/licenses/gpl.txt)
-and [FTL](https://code.google.com/p/freetype-go/source/browse/licenses/ftl.txt)
-licenses for more information about the requirements.
 
 ### License
 
