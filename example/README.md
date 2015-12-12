@@ -9,4 +9,4 @@ A simple example that centers text on screen.
 Free personal and commercial font:
 http://www.freejapanesefont.com/honoka-mincho-download/
 
-![Alt text](/example.png?raw=true "Working Example")
+![Alt text](/example/example.png?raw=true "Working Example")
