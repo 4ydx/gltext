@@ -5,6 +5,7 @@
 package gltext
 
 import (
+	"errors"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/math/fixed"
@@ -12,7 +13,48 @@ import (
 	"image/draw"
 	"io"
 	"io/ioutil"
+	"sort"
 )
+
+// RuneRanges specify the rune ranges for ordered disjoint subsets of the ttf
+// EG 32 - 127, 5000 - 6000 will created a more compact bitmap that holds the
+// specified ranges of runes.
+type RuneRange struct {
+	Low, High rune
+}
+
+type RuneRanges []RuneRange
+
+func (rr RuneRanges) Len() int           { return len(rr) }
+func (rr RuneRanges) Swap(i, j int)      { rr[i], rr[j] = rr[j], rr[i] }
+func (rr RuneRanges) Less(i, j int) bool { return rr[i].Low < rr[j].Low }
+
+func (rr RuneRanges) Validate() bool {
+	sort.Sort(rr)
+	previousMax := rune(0)
+	for _, r := range rr {
+		if r.Low <= previousMax {
+			return false
+		}
+		if r.Low > r.High {
+			return false
+		}
+		previousMax = r.High
+	}
+	return true
+}
+
+func (rr RuneRanges) GetGlyphIndex(char rune) rune {
+	var index, offset rune
+	index = -1
+	for _, runes := range rr {
+		if char >= runes.Low && char <= runes.High {
+			index = char - runes.Low + offset
+		}
+		offset += runes.High - runes.Low + 1
+	}
+	return index
+}
 
 // http://www.freetype.org/freetype2/docs/tutorial/step2.html
 
@@ -21,7 +63,11 @@ import (
 //
 // The low and high values determine the lower and upper rune limits
 // we should load for this font. For standard ASCII this would be: 32, 127.
-func NewTruetype(r io.Reader, scale fixed.Int26_6, low, high rune, runesPerRow fixed.Int26_6) (*Font, error) {
+func NewTruetype(r io.Reader, scale fixed.Int26_6, runeRanges RuneRanges, runesPerRow fixed.Int26_6) (*Font, error) {
+	if !runeRanges.Validate() {
+		return nil, errors.New("Invalid rune ranges supplied.")
+	}
+
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -35,9 +81,12 @@ func NewTruetype(r io.Reader, scale fixed.Int26_6, low, high rune, runesPerRow f
 
 	// Create our FontConfig type.
 	var fc FontConfig
-	fc.Low = low
-	fc.High = high
-	fc.Glyphs = make(Charset, high-low+1)
+	length := rune(0)
+	for _, r := range runeRanges {
+		length += r.High - r.Low + 1
+	}
+	fc.RuneRanges = runeRanges
+	fc.Glyphs = make(Charset, int(length))
 
 	// Create an image, large enough to store all requested glyphs.
 	// The resulting image is set to power of 2 dimensions so it might be wise to adjust the runesPerRow
@@ -71,26 +120,30 @@ func NewTruetype(r io.Reader, scale fixed.Int26_6, low, high rune, runesPerRow f
 	var gi fixed.Int26_6
 	var gx, gy fixed.Int26_6
 
-	for ch := low; ch <= high; ch++ {
-		index := ttf.Index(ch)
-		metric := ttf.HMetric(scale, index)
+	for _, runeRange := range fc.RuneRanges {
+		for ch := runeRange.Low; ch <= runeRange.High; ch++ {
+			index := ttf.Index(ch)
+			metric := ttf.HMetric(scale, index)
 
-		fc.Glyphs[gi].Advance = int(metric.AdvanceWidth)
-		fc.Glyphs[gi].X = int(gx)
-		fc.Glyphs[gi].Y = int(gy)
-		fc.Glyphs[gi].Width = int(gw)
-		fc.Glyphs[gi].Height = int(gh)
+			fc.Glyphs[gi].Advance = int(metric.AdvanceWidth)
+			fc.Glyphs[gi].X = int(gx)
+			fc.Glyphs[gi].Y = int(gy)
+			fc.Glyphs[gi].Width = int(gw)
+			fc.Glyphs[gi].Height = int(gh)
 
-		pt := freetype.Pt(int(gx), int(gy)+int(c.PointToFixed(float64(scale))>>6))
-		c.DrawString(string(ch), pt)
+			pt := freetype.Pt(int(gx), int(gy)+int(c.PointToFixed(float64(scale))>>6))
+			c.DrawString(string(ch), pt)
 
-		if gi%runesPerRow == 0 {
-			gx = 0
-			gy += gh
-		} else {
-			gx += gw
+			if gi%runesPerRow == 0 {
+				if gi > 0 {
+					gx = 0
+					gy += gh
+				}
+			} else {
+				gx += gw
+			}
+			gi++
 		}
-		gi++
 	}
 	return NewFont(&fc)
 }

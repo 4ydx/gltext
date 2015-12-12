@@ -359,40 +359,42 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 }
 
 func (t *Text) HasRune(r rune) bool {
-	glyphs := t.font.Config.Glyphs
-	low := t.font.Config.Low
-	r -= low
-	return r >= 0 && int(r) < len(glyphs)
+	for _, runes := range t.font.Config.RuneRanges {
+		if r >= runes.Low && r <= runes.High {
+			return true
+		}
+	}
+	return false
 }
 
 // makeBufferData positions quads for drawing the text in the indices parameter using glyph dimensions
 func (t *Text) makeBufferData(indices []rune) {
 	glyphs := t.font.Config.Glyphs
-	low := t.font.Config.Low
 
 	vboIndex := 0
 	eboIndex := 0
 	lineX := float32(0)
 	eboOffset := int32(0)
 	for i, r := range indices {
-		r -= low
-		if r >= 0 && int(r) < len(glyphs) {
+		glyphIndex := t.font.Config.RuneRanges.GetGlyphIndex(r)
+		if glyphIndex >= 0 {
 			if IsDebug {
 				prefix := DebugPrefix()
-				fmt.Printf("%s rune %+v line at %f", prefix, glyphs[r], lineX)
+				fmt.Println("glyphIndex", glyphIndex)
+				fmt.Printf("%s rune %+v line at %f", prefix, glyphs[glyphIndex], lineX)
 			}
-			vw := float32(glyphs[r].Width)
-			vh := float32(glyphs[r].Height)
+			vw := float32(glyphs[glyphIndex].Width)
+			vh := float32(glyphs[glyphIndex].Height)
 
 			// variable width characters will produce a bounding box that is just
 			// a bit too long on the right-hand side unless we trim off the excess
 			// when processing the right-most character
-			advance := float32(glyphs[r].Advance)
+			advance := float32(glyphs[glyphIndex].Advance)
 			trim := float32(0)
 			if i == len(indices)-1 {
 				trim = vw - advance
 			}
-			tP1, tP2 := glyphs[r].GetIndices(t.font)
+			tP1, tP2 := glyphs[glyphIndex].GetIndices(t.font)
 
 			// counter-clockwise quad
 			// the bounding box value X2 is being expanded as characters are added

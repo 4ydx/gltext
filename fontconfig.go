@@ -25,7 +25,8 @@ type Direction uint8
 // which should come with any bitmap font image.
 type FontConfig struct {
 	// The range of glyphs covered by this fontconfig
-	Low, High rune
+	// An array of Low, High values allowing the user to select disjoint subsets of the ttf
+	RuneRanges RuneRanges
 
 	// Glyphs holds a set of glyph descriptors, defining the location,
 	// size and advance of each glyph in the sprite sheet.
