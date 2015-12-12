@@ -62,7 +62,7 @@ func main() {
 		// 30a0 - 30ff -> 12448 - 12543
 		// 4e00 - 9faf -> 19968 - 40879
 		// ff00 - ffef -> 65280 - 65519
-		scale := fixed.Int26_6(20)
+		scale := fixed.Int26_6(32)
 		runesPerRow := fixed.Int26_6(128)
 		runeRanges := make(gltext.RuneRanges, 0)
 		runeRange := gltext.RuneRange{Low: 12288, High: 12336}

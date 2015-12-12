@@ -58,7 +58,8 @@ func (fc *FontConfig) Load(rootPath string) (err error) {
 
 // Save writes font configuration data to the given stream as JSON data.
 func (fc *FontConfig) Save(rootPath string) error {
-	data, err := json.MarshalIndent(fc, "", "  ")
+	//data, err := json.MarshalIndent(fc, "", "  ")
+	data, err := json.Marshal(fc)
 	if err != nil {
 		return err
 	}
