@@ -172,6 +172,8 @@ func (t *Text) SetColor(r, g, b float32) {
 func (t *Text) SetString(fs string, argv ...interface{}) {
 	indices := []rune(fmt.Sprintf(fs, argv...))
 	if len(indices) == 0 {
+		t.String = ""
+		t.RuneCount = 0
 		return
 	}
 	if t.MaxRuneCount > 0 && len(indices) > t.MaxRuneCount+1 {
