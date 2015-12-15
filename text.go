@@ -377,7 +377,7 @@ func (t *Text) PrintCharSpacing() {
 	at := t.X1.X
 	for i, cs := range t.CharSpacing {
 		at = cs + at
-		fmt.Printf("%c %.2f ", t.String[i], at)
+		fmt.Printf("'%c': %.2f ", t.String[i], at)
 	}
 }
 
@@ -391,6 +391,12 @@ func (t *Text) ClickedCharacter(xPos float64) (index int, side CharacterSide) {
 	at := float64(t.X1.X)
 	for i, cs := range t.CharSpacing {
 		at = float64(cs) + at
+		if i == 0 && xPos <= at-float64(cs) {
+			return i, CSLeft
+		}
+		if i == len(t.CharSpacing)-1 && xPos > at {
+			return i, CSRight
+		}
 		if xPos <= at && xPos > at-float64(cs) {
 			if xPos-(at-float64(cs)) > float64(cs)/2 {
 				return i, CSRight
@@ -429,16 +435,17 @@ func (t *Text) makeBufferData(indices []rune) {
 				fmt.Println("glyphIndex", glyphIndex)
 				fmt.Printf("%s rune %+v line at %f", prefix, glyphs[glyphIndex], lineX)
 			}
+			advance := float32(glyphs[glyphIndex].Advance)
 			vw := float32(glyphs[glyphIndex].Width)
 			vh := float32(glyphs[glyphIndex].Height)
 
 			// used to determine which character inside of the text was clicked
-			t.CharSpacing = append(t.CharSpacing, vw)
+			//t.CharSpacing = append(t.CharSpacing, vw)
+			t.CharSpacing = append(t.CharSpacing, advance)
 
 			// variable width characters will produce a bounding box that is just
 			// a bit too long on the right-hand side unless we trim off the excess
 			// when processing the right-most character
-			advance := float32(glyphs[glyphIndex].Advance)
 			trim := float32(0)
 			if i == len(indices)-1 {
 				trim = vw - advance
