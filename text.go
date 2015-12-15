@@ -17,6 +17,16 @@ const (
 	AlignRight
 )
 
+// CharacterSide shows which side of a character is
+// clicked
+type CharacterSide int
+
+const (
+	CSLeft CharacterSide = iota
+	CSRight
+	CSUnknown
+)
+
 type Text struct {
 	font *Font
 
@@ -64,7 +74,8 @@ type Text struct {
 	Width  float32
 	Height float32
 
-	String string
+	String      string
+	CharSpacing []float32
 }
 
 func (t *Text) GetLength() int {
@@ -360,6 +371,37 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	return
 }
 
+// PrintCharSpacing is used for debugging
+func (t *Text) PrintCharSpacing() {
+	fmt.Printf("\n%s:\n", t.String)
+	at := t.X1.X
+	for i, cs := range t.CharSpacing {
+		at = cs + at
+		fmt.Printf("%c %.2f ", t.String[i], at)
+	}
+}
+
+// ClickedCharacter should only be called after a bounding box hit is confirmed because
+// it does not check y-axis values at all.  Returns the index and side of the char clicked.
+func (t *Text) ClickedCharacter(xPos float64) (index int, side CharacterSide) {
+	// transform from screen coordinates to... window coordinates?
+	xPos = xPos - float64(t.font.WindowWidth/2)
+
+	// could do a binary search...
+	at := float64(t.X1.X)
+	for i, cs := range t.CharSpacing {
+		at = float64(cs) + at
+		if xPos <= at && xPos > at-float64(cs) {
+			if xPos-(at-float64(cs)) > float64(cs)/2 {
+				return i, CSRight
+			} else {
+				return i, CSLeft
+			}
+		}
+	}
+	return -1, CSUnknown
+}
+
 func (t *Text) HasRune(r rune) bool {
 	for _, runes := range t.font.Config.RuneRanges {
 		if r >= runes.Low && r <= runes.High {
@@ -377,6 +419,8 @@ func (t *Text) makeBufferData(indices []rune) {
 	eboIndex := 0
 	lineX := float32(0)
 	eboOffset := int32(0)
+
+	t.CharSpacing = make([]float32, 0)
 	for i, r := range indices {
 		glyphIndex := t.font.Config.RuneRanges.GetGlyphIndex(r)
 		if glyphIndex >= 0 {
@@ -387,6 +431,9 @@ func (t *Text) makeBufferData(indices []rune) {
 			}
 			vw := float32(glyphs[glyphIndex].Width)
 			vh := float32(glyphs[glyphIndex].Height)
+
+			// used to determine which character inside of the text was clicked
+			t.CharSpacing = append(t.CharSpacing, vw)
 
 			// variable width characters will produce a bounding box that is just
 			// a bit too long on the right-hand side unless we trim off the excess

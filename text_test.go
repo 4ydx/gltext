@@ -27,3 +27,31 @@ func TestHasRune(t *testing.T) {
 		t.Error("Should not have 41.")
 	}
 }
+
+// TestClickedCharacter tests a hypothetical string of length 3 with variable width chars
+func TestClickedCharacter(t *testing.T) {
+	text := &Text{}
+	text.font = &Font{}
+	text.font.WindowWidth = 100
+	text.X1.X = -20
+	text.String = "ABC"
+
+	// click was just around the middle of the screen
+	xPos := float64(51)
+
+	// -20 to -10 is A
+	// -10 to +10 is B
+	// +10 to +20 is C
+	text.CharSpacing = make([]float32, 0)
+	text.CharSpacing = append(text.CharSpacing, 10)
+	text.CharSpacing = append(text.CharSpacing, 20)
+	text.CharSpacing = append(text.CharSpacing, 10)
+
+	index, side := text.ClickedCharacter(xPos)
+	if index != 1 {
+		t.Error("Expecting index 1")
+	}
+	if side != CSRight {
+		t.Error("Expecting right side click")
+	}
+}
