@@ -408,6 +408,17 @@ func (t *Text) ClickedCharacter(xPos float64) (index int, side CharacterSide) {
 	return -1, CSUnknown
 }
 
+func (t *Text) CharPosition(index int) float64 {
+	at := float64(t.X1.X)
+	for i, cs := range t.CharSpacing {
+		if i == index {
+			break
+		}
+		at = float64(cs) + at
+	}
+	return at
+}
+
 func (t *Text) HasRune(r rune) bool {
 	for _, runes := range t.font.Config.RuneRanges {
 		if r >= runes.Low && r <= runes.High {
