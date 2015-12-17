@@ -44,6 +44,10 @@ func (rr RuneRanges) Validate() bool {
 	return true
 }
 
+// GetGlyphIndex returns the location of the glyph data within
+// the compressed rune ranges covered by the font
+// EG if runes 0-25, 100-110 are supported by the font then
+// the actual location of 100 will be in position 26 in the png image
 func (rr RuneRanges) GetGlyphIndex(char rune) rune {
 	var index, offset rune
 	index = -1

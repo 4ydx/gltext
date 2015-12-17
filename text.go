@@ -15,6 +15,7 @@ type Align int
 const (
 	AlignLeft Align = iota
 	AlignRight
+	AlignCenter
 )
 
 // CharacterSide shows which side of a character is
@@ -69,10 +70,6 @@ type Text struct {
 
 	SetPositionX float32
 	SetPositionY float32
-
-	// Width and Height of the text in screen coordinates
-	Width  float32
-	Height float32
 
 	String      string
 	CharSpacing []float32
@@ -316,7 +313,7 @@ func (t *Text) Draw() {
 		drawCount = int32(t.eboIndexCount)
 	}
 	if drawCount < 0 {
-		drawCount = 0
+		return
 	}
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -361,14 +358,20 @@ func (t *Text) setDataPosition(lowerLeft Point) (err error) {
 	t.X2.X += lowerLeft.X
 	t.X1.Y += lowerLeft.Y
 	t.X2.Y += lowerLeft.Y
-	t.Width = t.X2.X - t.X1.X
-	t.Height = t.X2.Y - t.X1.Y
 
 	// prepare objects for drawing the bounding box
 	if IsDebug {
 		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
 	}
 	return
+}
+
+func (t *Text) Width() float32 {
+	return t.X2.X - t.X1.X
+}
+
+func (t *Text) Height() float32 {
+	return t.X2.Y - t.X1.Y
 }
 
 // PrintCharSpacing is used for debugging
