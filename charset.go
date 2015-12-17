@@ -23,7 +23,7 @@ type Glyph struct {
 	Advance int `json:"advance"`
 }
 
-func (g *Glyph) GetIndices(font *Font) (tP1, tP2 Point) {
+func (g *Glyph) GetTexturePositions(font *Font) (tP1, tP2 Point) {
 	// Quad width/height
 	vw := float32(g.Width)
 	vh := float32(g.Height)

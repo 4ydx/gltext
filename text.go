@@ -199,21 +199,15 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	t.eboData = make([]int32, t.eboIndexCount, t.eboIndexCount)
 
 	// generate the basic vbo data and bounding box
+	// center the vbo data around the orthographic (0,0) point
 	t.X1 = Point{0, 0}
 	t.X2 = Point{0, 0}
 	t.makeBufferData(indices)
-
-	// find the centered position of the bounding box
-	lowerLeft := t.getLowerLeft()
-
-	// reposition the vbo data so that it is centered at (0,0)
-	// according to the orthographic projection being used
-	t.setDataPosition(lowerLeft)
+	t.centerTheData(t.getLowerLeft())
 
 	if IsDebug {
 		prefix := DebugPrefix()
 		fmt.Printf("%s bounding box %v %v\n", prefix, t.X1, t.X2)
-		fmt.Printf("%s lower left\n%v\n", prefix, lowerLeft)
 		fmt.Printf("%s text vbo data\n%v\n", prefix, t.vboData)
 		fmt.Printf("%s text ebo data\n%v\n", prefix, t.eboData)
 	}
@@ -323,9 +317,9 @@ func (t *Text) Draw() {
 	gl.Disable(gl.BLEND)
 }
 
-// all text originally sits at point (0,0) which is the
-// lower left hand corner of the screen.
-func (t *Text) setDataPosition(lowerLeft Point) (err error) {
+// centerTheData prepares the value "centered_position" found in the font shader
+// as named, the function centers the text around the orthographic center of the screen
+func (t *Text) centerTheData(lowerLeft Point) (err error) {
 	length := len(t.vboData)
 	for index := 0; index < length; {
 		// index (0,0)
@@ -464,7 +458,7 @@ func (t *Text) makeBufferData(indices []rune) {
 			if i == len(indices)-1 {
 				trim = vw - advance
 			}
-			tP1, tP2 := glyphs[glyphIndex].GetIndices(t.font)
+			tP1, tP2 := glyphs[glyphIndex].GetTexturePositions(t.font)
 
 			// counter-clockwise quad
 			// the bounding box value X2 is being expanded as characters are added
