@@ -55,3 +55,18 @@ func TestClickedCharacter(t *testing.T) {
 		t.Error("Expecting right side click")
 	}
 }
+
+func TestBoundingBox(t *testing.T) {
+	text := &Text{}
+	text.X1 = Point{-10, -10}
+	text.X2 = Point{+10, +10}
+	text.font = &Font{}
+	text.SetPosition(10, 5)
+	x1, x2 := text.GetBoundingBox()
+	if x1.X != 0 || x1.Y != -5 {
+		t.Error(x1)
+	}
+	if x2.X != 20 || x2.Y != 15 {
+		t.Error(x2)
+	}
+}

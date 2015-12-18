@@ -95,10 +95,16 @@ func main() {
 	text.SetString(str)
 	text.SetColor(1, 1, 1)
 
+	i := 0
 	gl.ClearColor(0.4, 0.4, 0.4, 0.0)
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+		text.SetPosition(0, float32(i))
+		i++
+		if i > 200 {
+			i = -200
+		}
 		text.Draw()
 
 		window.SwapBuffers()

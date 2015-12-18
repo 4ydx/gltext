@@ -241,12 +241,9 @@ func (t *Text) getLowerLeft() (lowerLeft Point) {
 	return
 }
 
-// Requirement prior to calling SetPosition:
-// The text's X1 and X2 values must be the bounding box with center (0,0)
+// SetPosition prepares variables passed to the shader as well as values
+// used for bounding box calculations when clicking or hovering above text
 func (t *Text) SetPosition(x, y float32) {
-	if t.X1.X == 0 && t.X1.Y == 0 && t.X2.X == 0 && t.X2.Y == 0 {
-		TextDebug("Bounding Box Is Unset")
-	}
 	// transform to orthographic coordinates ranged -1 to 1 for the shader
 	t.finalPosition[0] = x / (t.font.WindowWidth / 2)
 	t.finalPosition[1] = y / (t.font.WindowHeight / 2)
@@ -254,34 +251,29 @@ func (t *Text) SetPosition(x, y float32) {
 		t.BoundingBox.finalPosition[0] = x / (t.font.WindowWidth / 2)
 		t.BoundingBox.finalPosition[1] = y / (t.font.WindowHeight / 2)
 	}
-
-	// used for detecting clicks, hovers, etc
-	t.X1.X += x
-	t.X1.Y += y
-	t.X2.X += x
-	t.X2.Y += y
-
-	// used to build shadow data and for calling SetPosition again when needed
 	t.SetPositionX = x
 	t.SetPositionY = y
 }
 
+func (t *Text) GetBoundingBox() (X1, X2 Point) {
+	x, y := t.SetPositionX, t.SetPositionY
+	X1.X = t.X1.X + x
+	X1.Y = t.X1.Y + y
+	X2.X = t.X2.X + x
+	X2.Y = t.X2.Y + y
+	return
+}
+
+// Justify is funky!
 func (t *Text) Justify(align Align) {
 	// calculate left aligned text location
 	sign := 1
 	if align == AlignRight {
 		sign = -1
 	}
-	x := t.SetPositionX + float32(sign)*(t.X2.X-t.X1.X)/2
+	X1, X2 := t.GetBoundingBox()
+	x := t.SetPositionX + float32(sign)*(X2.X-X1.X)/2
 	y := t.SetPositionY
-
-	// SetPosition requires the text bounding box be centered on (0,0).
-	// so calculate its original value
-	tX2 := Point{X: (t.X2.X - t.X1.X) / 2, Y: (t.X2.Y - t.X1.Y) / 2}
-	tX1 := Point{X: -tX2.X, Y: -tX2.Y}
-	t.X2 = tX2
-	t.X1 = tX1
-
 	t.SetPosition(x, y)
 }
 
@@ -319,6 +311,7 @@ func (t *Text) Draw() {
 
 // centerTheData prepares the value "centered_position" found in the font shader
 // as named, the function centers the text around the orthographic center of the screen
+// expected to only be called within SetString
 func (t *Text) centerTheData(lowerLeft Point) (err error) {
 	length := len(t.vboData)
 	for index := 0; index < length; {
@@ -347,7 +340,7 @@ func (t *Text) centerTheData(lowerLeft Point) (err error) {
 		index += 3
 	}
 
-	// update bounding box
+	// update bounding box so that it is centered around (0,0)
 	t.X1.X += lowerLeft.X
 	t.X2.X += lowerLeft.X
 	t.X1.Y += lowerLeft.Y
@@ -426,6 +419,8 @@ func (t *Text) HasRune(r rune) bool {
 }
 
 // makeBufferData positions quads for drawing the text in the indices parameter using glyph dimensions
+// it also generates the bounding box (which needs to later be centered around (0,0))
+// expected to only be called by SetString
 func (t *Text) makeBufferData(indices []rune) {
 	glyphs := t.font.Config.Glyphs
 
