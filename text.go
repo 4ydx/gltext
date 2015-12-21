@@ -29,7 +29,7 @@ const (
 )
 
 type Text struct {
-	font *Font
+	Font *Font
 
 	// final position on screen
 	finalPosition mgl32.Vec2
@@ -84,7 +84,7 @@ func (t *Text) GetLength() int {
 // is scaleMin.  most likely one wants to use 1.0.
 func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 	t = &Text{}
-	t.font = f
+	t.Font = f
 
 	// text hover values
 	// "resting state" of a text object is the min scale
@@ -104,15 +104,15 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 	gl.BindVertexArray(t.vao)
 
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, t.font.textureID)
+	gl.BindTexture(gl.TEXTURE_2D, t.Font.textureID)
 
 	// vbo
 	// specify the buffer for which the VertexAttribPointer calls apply
 	gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
 
-	gl.EnableVertexAttribArray(t.font.centeredPosition)
+	gl.EnableVertexAttribArray(t.Font.centeredPosition)
 	gl.VertexAttribPointer(
-		t.font.centeredPosition,
+		t.Font.centeredPosition,
 		2,
 		gl.FLOAT,
 		false,
@@ -120,9 +120,9 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 		gl.PtrOffset(0),
 	)
 
-	gl.EnableVertexAttribArray(t.font.uv)
+	gl.EnableVertexAttribArray(t.Font.uv)
 	gl.VertexAttribPointer(
-		t.font.uv,
+		t.Font.uv,
 		2,
 		gl.FLOAT,
 		false,
@@ -245,11 +245,11 @@ func (t *Text) getLowerLeft() (lowerLeft Point) {
 // used for bounding box calculations when clicking or hovering above text
 func (t *Text) SetPosition(x, y float32) {
 	// transform to orthographic coordinates ranged -1 to 1 for the shader
-	t.finalPosition[0] = x / (t.font.WindowWidth / 2)
-	t.finalPosition[1] = y / (t.font.WindowHeight / 2)
+	t.finalPosition[0] = x / (t.Font.WindowWidth / 2)
+	t.finalPosition[1] = y / (t.Font.WindowHeight / 2)
 	if IsDebug {
-		t.BoundingBox.finalPosition[0] = x / (t.font.WindowWidth / 2)
-		t.BoundingBox.finalPosition[1] = y / (t.font.WindowHeight / 2)
+		t.BoundingBox.finalPosition[0] = x / (t.Font.WindowWidth / 2)
+		t.BoundingBox.finalPosition[1] = y / (t.Font.WindowHeight / 2)
 	}
 	t.SetPositionX = x
 	t.SetPositionY = y
@@ -281,17 +281,17 @@ func (t *Text) Draw() {
 	if IsDebug {
 		t.BoundingBox.Draw()
 	}
-	gl.UseProgram(t.font.program)
+	gl.UseProgram(t.Font.program)
 
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, t.font.textureID)
+	gl.BindTexture(gl.TEXTURE_2D, t.Font.textureID)
 
 	// uniforms
-	gl.Uniform1i(t.font.fragmentTextureUniform, 0)
-	gl.Uniform4fv(t.font.colorUniform, 1, &t.color[0])
-	gl.Uniform2fv(t.font.finalPositionUniform, 1, &t.finalPosition[0])
-	gl.UniformMatrix4fv(t.font.orthographicMatrixUniform, 1, false, &t.font.OrthographicMatrix[0])
-	gl.UniformMatrix4fv(t.font.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
+	gl.Uniform1i(t.Font.fragmentTextureUniform, 0)
+	gl.Uniform4fv(t.Font.colorUniform, 1, &t.color[0])
+	gl.Uniform2fv(t.Font.finalPositionUniform, 1, &t.finalPosition[0])
+	gl.UniformMatrix4fv(t.Font.orthographicMatrixUniform, 1, false, &t.Font.OrthographicMatrix[0])
+	gl.UniformMatrix4fv(t.Font.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
 
 	// draw
 	drawCount := int32(t.RuneCount * 6)
@@ -348,7 +348,7 @@ func (t *Text) centerTheData(lowerLeft Point) (err error) {
 
 	// prepare objects for drawing the bounding box
 	if IsDebug {
-		t.BoundingBox, err = loadBoundingBox(t.font, t.X1, t.X2)
+		t.BoundingBox, err = loadBoundingBox(t.Font, t.X1, t.X2)
 	}
 	return
 }
@@ -375,7 +375,7 @@ func (t *Text) PrintCharSpacing() {
 // it does not check y-axis values at all.  Returns the index and side of the char clicked.
 func (t *Text) ClickedCharacter(xPos float64) (index int, side CharacterSide) {
 	// transform from screen coordinates to... window coordinates?
-	xPos = xPos - float64(t.font.WindowWidth/2)
+	xPos = xPos - float64(t.Font.WindowWidth/2)
 
 	// could do a binary search...
 	at := float64(t.X1.X)
@@ -410,7 +410,7 @@ func (t *Text) CharPosition(index int) float64 {
 }
 
 func (t *Text) HasRune(r rune) bool {
-	for _, runes := range t.font.Config.RuneRanges {
+	for _, runes := range t.Font.Config.RuneRanges {
 		if r >= runes.Low && r <= runes.High {
 			return true
 		}
@@ -422,7 +422,7 @@ func (t *Text) HasRune(r rune) bool {
 // it also generates the bounding box (which needs to later be centered around (0,0))
 // expected to only be called by SetString
 func (t *Text) makeBufferData(indices []rune) {
-	glyphs := t.font.Config.Glyphs
+	glyphs := t.Font.Config.Glyphs
 
 	vboIndex := 0
 	eboIndex := 0
@@ -431,7 +431,7 @@ func (t *Text) makeBufferData(indices []rune) {
 
 	t.CharSpacing = make([]float32, 0)
 	for i, r := range indices {
-		glyphIndex := t.font.Config.RuneRanges.GetGlyphIndex(r)
+		glyphIndex := t.Font.Config.RuneRanges.GetGlyphIndex(r)
 		if glyphIndex >= 0 {
 			if IsDebug {
 				prefix := DebugPrefix()
@@ -453,7 +453,7 @@ func (t *Text) makeBufferData(indices []rune) {
 			if i == len(indices)-1 {
 				trim = vw - advance
 			}
-			tP1, tP2 := glyphs[glyphIndex].GetTexturePositions(t.font)
+			tP1, tP2 := glyphs[glyphIndex].GetTexturePositions(t.Font)
 
 			// counter-clockwise quad
 			// the bounding box value X2 is being expanded as characters are added

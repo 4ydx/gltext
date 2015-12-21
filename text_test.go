@@ -19,7 +19,7 @@ func TestHasRune(t *testing.T) {
 		t.Error("Not validating properly.")
 	}
 	text := &Text{}
-	text.font = f
+	text.Font = f
 	if !text.HasRune(40) {
 		t.Error("Missing rune 40.")
 	}
@@ -31,8 +31,8 @@ func TestHasRune(t *testing.T) {
 // TestClickedCharacter tests a hypothetical string of length 3 with variable width chars
 func TestClickedCharacter(t *testing.T) {
 	text := &Text{}
-	text.font = &Font{}
-	text.font.WindowWidth = 100
+	text.Font = &Font{}
+	text.Font.WindowWidth = 100
 	text.X1.X = -20
 	text.String = "ABC"
 
@@ -60,7 +60,7 @@ func TestBoundingBox(t *testing.T) {
 	text := &Text{}
 	text.X1 = Point{-10, -10}
 	text.X2 = Point{+10, +10}
-	text.font = &Font{}
+	text.Font = &Font{}
 	text.SetPosition(10, 5)
 	x1, x2 := text.GetBoundingBox()
 	if x1.X != 0 || x1.Y != -5 {
