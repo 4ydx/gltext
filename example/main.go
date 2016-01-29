@@ -5,6 +5,7 @@ import (
 	"github.com/4ydx/gltext"
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/image/math/fixed"
 	"os"
 	"runtime"
@@ -93,7 +94,7 @@ func main() {
 		fmt.Printf("%c: %d\n", s, rune(s))
 	}
 	text.SetString(str)
-	text.SetColor(1, 1, 1)
+	text.SetColor(mgl32.Vec3{1, 1, 1})
 
 	i := 0
 	gl.ClearColor(0.4, 0.4, 0.4, 0.0)

@@ -140,8 +140,7 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 	return t
 }
 
-// Release releases font resources.
-// A font can no longer be used for rendering after this call completes.
+// Release releases text resources.
 func (t *Text) Release() {
 	gl.DeleteBuffers(1, &t.vbo)
 	gl.DeleteBuffers(1, &t.ebo)
@@ -171,8 +170,8 @@ func (t *Text) AddScale(s float32) bool {
 	return true
 }
 
-func (t *Text) SetColor(r, g, b float32) {
-	t.color = mgl32.Vec3{r, g, b}
+func (t *Text) SetColor(color mgl32.Vec3) {
+	t.color = color
 }
 
 // SetString performs creates new vbo and ebo objects as well as to perform all
