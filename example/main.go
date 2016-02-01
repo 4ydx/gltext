@@ -101,7 +101,7 @@ func main() {
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		text.SetPosition(0, float32(i))
+		text.SetPosition(mgl32.Vec2{0, float32(i)})
 		i++
 		if i > 200 {
 			i = -200
