@@ -69,7 +69,7 @@ type Text struct {
 	X2 Point
 
 	// Screen position away from center
-	setPosition mgl32.Vec2
+	Position mgl32.Vec2
 
 	String      string
 	CharSpacing []float32
@@ -225,7 +225,7 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 
 	// SetString can be called at anytime.  we want to make sure that if the user is updating the text,
 	// the previous position will be maintained
-	t.SetPosition(t.setPosition)
+	t.SetPosition(t.Position)
 }
 
 // The block of text is positioned around the center of the screen, which in this case must
@@ -250,11 +250,11 @@ func (t *Text) SetPosition(v mgl32.Vec2) {
 		t.BoundingBox.finalPosition[0] = v.X() / (t.Font.WindowWidth / 2)
 		t.BoundingBox.finalPosition[1] = v.Y() / (t.Font.WindowHeight / 2)
 	}
-	t.setPosition = v
+	t.Position = v
 }
 
 func (t *Text) GetBoundingBox() (X1, X2 Point) {
-	x, y := t.setPosition.X(), t.setPosition.Y()
+	x, y := t.Position.X(), t.Position.Y()
 	X1.X = t.X1.X + x
 	X1.Y = t.X1.Y + y
 	X2.X = t.X2.X + x
@@ -270,7 +270,7 @@ func (t *Text) Justify(align Align) {
 		sign = -1
 	}
 	X1, X2 := t.GetBoundingBox()
-	v := mgl32.Vec2{t.setPosition.X() + float32(sign)*(X2.X-X1.X)/2, t.setPosition.Y()}
+	v := mgl32.Vec2{t.Position.X() + float32(sign)*(X2.X-X1.X)/2, t.Position.Y()}
 	t.SetPosition(v)
 }
 
