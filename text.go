@@ -103,7 +103,9 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 	// vao
 	gl.BindVertexArray(t.vao)
 
-	gl.ActiveTexture(gl.TEXTURE0)
+	// i think this call isnt necessary here
+	// gl.ActiveTexture(gl.TEXTURE0)
+
 	gl.BindTexture(gl.TEXTURE_2D, t.Font.textureID)
 
 	// vbo
