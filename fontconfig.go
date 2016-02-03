@@ -47,7 +47,7 @@ func (fc *FontConfig) Load(rootPath string) (err error) {
 		return err
 	}
 	fmt.Printf("%+v\n", time.Now())
-	fc.Image, err = LoadImage(rootPath)
+	fc.Image, err = LoadFontImage(rootPath)
 	if err != nil {
 		return err
 	}
@@ -79,21 +79,9 @@ func (fc *FontConfig) Save(rootPath string) error {
 	return err
 }
 
-func LoadImage(rootPath string) (*image.NRGBA, error) {
+func LoadFontImage(rootPath string) (*image.NRGBA, error) {
 	file := fmt.Sprintf("%s/image.png", rootPath)
-	img, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	pix, _, err := image.Decode(img)
-	if err != nil {
-		return nil, err
-	}
-	p, ok := pix.(*image.NRGBA)
-	if ok {
-		return p, nil
-	}
-	return nil, errors.New("Not a NRGBA image.")
+	return LoadImage(file)
 }
 
 func SaveImage(rootPath string, img *image.NRGBA) error {

@@ -5,9 +5,11 @@
 package gltext
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
+	"os"
 )
 
 // Pow2 returns the first power-of-two value >= to n.
@@ -91,4 +93,20 @@ func copyImg(src, dst copyable) image.Image {
 	}
 
 	return dst
+}
+
+func LoadImage(path string) (*image.NRGBA, error) {
+	img, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	pix, _, err := image.Decode(img)
+	if err != nil {
+		return nil, err
+	}
+	p, ok := pix.(*image.NRGBA)
+	if ok {
+		return p, nil
+	}
+	return nil, errors.New("Not a NRGBA image.")
 }
