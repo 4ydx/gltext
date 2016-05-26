@@ -60,8 +60,8 @@ type Font struct {
 	program        uint32      // program compiled from shaders
 
 	// attributes
-	centeredPosition uint32 // vertex centered_position required for scaling around the orthographic projections center
-	uv               uint32 // texture position
+	centeredPositionAttribute uint32 // vertex centered_position required for scaling around the orthographic projections center
+	uvAttribute               uint32 // texture position
 
 	// The final screen position post-scaling
 	finalPositionUniform int32
@@ -138,8 +138,8 @@ func NewFont(config *FontConfig) (f *Font, err error) {
 	}
 
 	// attributes
-	f.centeredPosition = uint32(gl.GetAttribLocation(f.program, gl.Str("centered_position\x00")))
-	f.uv = uint32(gl.GetAttribLocation(f.program, gl.Str("uv\x00")))
+	f.centeredPositionAttribute = uint32(gl.GetAttribLocation(f.program, gl.Str("centered_position\x00")))
+	f.uvAttribute = uint32(gl.GetAttribLocation(f.program, gl.Str("uv\x00")))
 
 	// uniforms
 	f.finalPositionUniform = gl.GetUniformLocation(f.program, gl.Str("final_position\x00"))

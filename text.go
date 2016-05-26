@@ -112,9 +112,9 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 	// specify the buffer for which the VertexAttribPointer calls apply
 	gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
 
-	gl.EnableVertexAttribArray(t.Font.centeredPosition)
+	gl.EnableVertexAttribArray(t.Font.centeredPositionAttribute)
 	gl.VertexAttribPointer(
-		t.Font.centeredPosition,
+		t.Font.centeredPositionAttribute,
 		2,
 		gl.FLOAT,
 		false,
@@ -122,9 +122,9 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 		gl.PtrOffset(0),
 	)
 
-	gl.EnableVertexAttribArray(t.Font.uv)
+	gl.EnableVertexAttribArray(t.Font.uvAttribute)
 	gl.VertexAttribPointer(
-		t.Font.uv,
+		t.Font.uvAttribute,
 		2,
 		gl.FLOAT,
 		false,
