@@ -29,7 +29,24 @@ func (g *Glyph) GetTexturePositions(font *Font) (tP1, tP2 Point) {
 	vh := float32(g.Height)
 
 	// texture point 1
-	tP1 = Point{X: float32(g.X) / font.textureWidth, Y: float32(g.Y) / font.textureHeight}
+	// Unfortunately with the current font, if I don't add a small offset to the Y axis location
+	// the bottom edge of the character above might appear.
+	//
+	// EG:
+	// Wrapping 16 characters per line:
+	// runesPerRow := fixed.Int26_6(16)
+	// runeRanges := make(gltext.RuneRanges, 0)
+	// runeRange := gltext.RuneRange{Low: 1, High: 128}
+	// runeRanges = append(runeRanges, runeRange)
+	//
+	// The resulting image file will place "g" above "w".  The very bottom edge of "g" will show up
+	// when using the "w" character in a line of text. So the dirty hack is to remove just a bit of
+	// the original top as per below.  This is not ideal.  Either I am not understanding something
+	// about the glyph layout or this will have to be tweaked based on the font being used.
+	// See the file example_image.png.
+
+	// tP1 = Point{X: float32(g.X) / font.textureWidth, Y: float32(g.Y) / font.textureHeight}
+	tP1 = Point{X: float32(g.X) / font.textureWidth, Y: float32(g.Y+1) / font.textureHeight}
 
 	// texture point 2
 	tP2 = Point{X: (float32(g.X) + vw) / font.textureWidth, Y: (float32(g.Y) + vh) / font.textureHeight}

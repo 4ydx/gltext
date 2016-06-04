@@ -442,7 +442,6 @@ func (t *Text) makeBufferData(indices []rune) {
 			vh := float32(glyphs[glyphIndex].Height)
 
 			// used to determine which character inside of the text was clicked
-			//t.CharSpacing = append(t.CharSpacing, vw)
 			t.CharSpacing = append(t.CharSpacing, advance)
 
 			// variable width characters will produce a bounding box that is just
