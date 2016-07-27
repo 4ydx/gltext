@@ -372,9 +372,9 @@ func (t *Text) PrintCharSpacing() {
 
 // ClickedCharacter should only be called after a bounding box hit is confirmed because
 // it does not check y-axis values at all.  Returns the index and side of the char clicked.
-func (t *Text) ClickedCharacter(xPos float64) (index int, side CharacterSide) {
+func (t *Text) ClickedCharacter(xPos, offset float64) (index int, side CharacterSide) {
 	// transform from screen coordinates to... window coordinates?
-	xPos = xPos - float64(t.Font.WindowWidth/2)
+	xPos = xPos - float64(t.Font.WindowWidth/2) - offset
 
 	// could do a binary search...
 	at := float64(t.X1.X)
