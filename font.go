@@ -39,7 +39,7 @@ var fontFragmentShaderSource string = `
 #version 330
 
 uniform sampler2D fragment_texture;
-uniform float text_lowerbound;
+uniform float fadeout;
 uniform vec4 fragment_color_adjustment;
 
 in vec2 fragment_uv;
@@ -48,6 +48,7 @@ out vec4 fragment_color;
 void main() {
   vec4 color     = texture(fragment_texture, fragment_uv);
   color.xyz      = fragment_color_adjustment.xyz;
+	color.w        = color.w - fadeout;
   fragment_color = color;
 }
 ` + "\x00"
@@ -70,7 +71,8 @@ type Font struct {
 	fragmentTextureUniform int32
 
 	// The desired color of the text
-	colorUniform int32
+	colorUniform   int32
+	fadeoutUniform int32
 
 	// View matrix
 	orthographicMatrixUniform int32
@@ -147,6 +149,7 @@ func NewFont(config *FontConfig) (f *Font, err error) {
 	f.scaleMatrixUniform = gl.GetUniformLocation(f.program, gl.Str("scale_matrix\x00"))
 	f.fragmentTextureUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_texture\x00"))
 	f.colorUniform = gl.GetUniformLocation(f.program, gl.Str("fragment_color_adjustment\x00"))
+	f.fadeoutUniform = gl.GetUniformLocation(f.program, gl.Str("fadeout\x00"))
 
 	return f, nil
 }

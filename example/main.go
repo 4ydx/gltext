@@ -96,6 +96,7 @@ func main() {
 	}
 	text.SetString(str)
 	text.SetColor(mgl32.Vec3{1, 1, 1})
+	text.FadeOutPerFrame = 0.01
 
 	i := 0
 	gl.ClearColor(0.4, 0.4, 0.4, 0.0)
@@ -108,7 +109,9 @@ func main() {
 			i = -200
 		}
 		text.Draw()
-
+		if text.FadeOutPerFrame*text.FadeOutFrameCount > 1.0 {
+			text.FadeOutFrameCount = 0
+		}
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}

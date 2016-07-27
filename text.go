@@ -43,6 +43,10 @@ type Text struct {
 	ScaleMax    float32
 	scaleMatrix mgl32.Mat4
 
+	// Fadeout reduces alpha
+	FadeOutFrameCount float32 // number of frames since drawing began
+	FadeOutPerFrame   float32 // smaller value takes more time
+
 	// bounding box of text
 	BoundingBox *BoundingBox
 
@@ -285,10 +289,12 @@ func (t *Text) Draw() {
 
 	// uniforms
 	gl.Uniform1i(t.Font.fragmentTextureUniform, 0)
+	gl.Uniform1f(t.Font.fadeoutUniform, t.FadeOutPerFrame*t.FadeOutFrameCount)
 	gl.Uniform4fv(t.Font.colorUniform, 1, &t.color[0])
 	gl.Uniform2fv(t.Font.finalPositionUniform, 1, &t.finalPosition[0])
 	gl.UniformMatrix4fv(t.Font.orthographicMatrixUniform, 1, false, &t.Font.OrthographicMatrix[0])
 	gl.UniformMatrix4fv(t.Font.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
+	t.FadeOutFrameCount++
 
 	// draw
 	drawCount := int32(t.RuneCount * 6)
