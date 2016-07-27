@@ -180,11 +180,6 @@ func (t *Text) SetColor(color mgl32.Vec3) {
 // binding required for displaying text to screen
 func (t *Text) SetString(fs string, argv ...interface{}) {
 	indices := []rune(fmt.Sprintf(fs, argv...))
-	if len(indices) == 0 {
-		t.String = ""
-		t.RuneCount = 0
-		return
-	}
 	if t.MaxRuneCount > 0 && len(indices) > t.MaxRuneCount+1 {
 		indices = indices[0:t.MaxRuneCount]
 	}
@@ -212,18 +207,21 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 		fmt.Printf("%s text vbo data\n%v\n", prefix, t.vboData)
 		fmt.Printf("%s text ebo data\n%v\n", prefix, t.eboData)
 	}
-	gl.BindVertexArray(t.vao)
-	gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
-	gl.BufferData(
-		gl.ARRAY_BUFFER, int(glfloat_size)*t.vboIndexCount, gl.Ptr(t.vboData), gl.DYNAMIC_DRAW)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, t.ebo)
-	gl.BufferData(
-		gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*t.eboIndexCount, gl.Ptr(t.eboData), gl.DYNAMIC_DRAW)
-	gl.BindVertexArray(0)
+	if len(indices) > 0 {
+		// in the event that we have no data to draw dont bother here
+		gl.BindVertexArray(t.vao)
+		gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
+		gl.BufferData(
+			gl.ARRAY_BUFFER, int(glfloat_size)*t.vboIndexCount, gl.Ptr(t.vboData), gl.DYNAMIC_DRAW)
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, t.ebo)
+		gl.BufferData(
+			gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*t.eboIndexCount, gl.Ptr(t.eboData), gl.DYNAMIC_DRAW)
+		gl.BindVertexArray(0)
 
-	// possibly not necesssary?
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+		// possibly not necesssary?
+		gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+	}
 
 	// SetString can be called at anytime.  we want to make sure that if the user is updating the text,
 	// the previous position will be maintained
