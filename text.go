@@ -282,6 +282,8 @@ func (t *Text) Draw() {
 	if IsDebug {
 		t.BoundingBox.Draw()
 	}
+	t.FadeOutFrameCount++
+
 	gl.UseProgram(t.Font.program)
 
 	gl.ActiveTexture(gl.TEXTURE0)
@@ -294,7 +296,6 @@ func (t *Text) Draw() {
 	gl.Uniform2fv(t.Font.finalPositionUniform, 1, &t.finalPosition[0])
 	gl.UniformMatrix4fv(t.Font.orthographicMatrixUniform, 1, false, &t.Font.OrthographicMatrix[0])
 	gl.UniformMatrix4fv(t.Font.scaleMatrixUniform, 1, false, &t.scaleMatrix[0])
-	t.FadeOutFrameCount++
 
 	// draw
 	drawCount := int32(t.RuneCount * 6)
