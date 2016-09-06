@@ -10,14 +10,6 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-type Align int
-
-const (
-	AlignLeft Align = iota
-	AlignRight
-	AlignCenter
-)
-
 // CharacterSide shows which side of a character is
 // clicked
 type CharacterSide int
@@ -266,18 +258,6 @@ func (t *Text) GetBoundingBox() (X1, X2 Point) {
 	return
 }
 
-// Justify is funky!
-func (t *Text) Justify(align Align) {
-	// calculate left aligned text location
-	sign := 1
-	if align == AlignRight {
-		sign = -1
-	}
-	X1, X2 := t.GetBoundingBox()
-	v := mgl32.Vec2{t.Position.X() + float32(sign)*(X2.X-X1.X)/2, t.Position.Y()}
-	t.SetPosition(v)
-}
-
 func (t *Text) Draw() {
 	if IsDebug {
 		t.BoundingBox.Draw()
@@ -302,7 +282,7 @@ func (t *Text) Draw() {
 	if drawCount > int32(t.eboIndexCount) {
 		drawCount = int32(t.eboIndexCount)
 	}
-	if drawCount < 0 {
+	if drawCount <= 0 {
 		return
 	}
 	gl.Enable(gl.BLEND)
