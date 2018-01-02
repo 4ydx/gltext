@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/4ydx/gltext"
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/dumkin/gltext"
+	"github.com/go-gl/gl/v4.5-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/image/math/fixed"
@@ -23,8 +23,8 @@ func main() {
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.Resizable, glfw.False)
-	glfw.WindowHint(glfw.ContextVersionMajor, 3)
-	glfw.WindowHint(glfw.ContextVersionMinor, 3)
+	glfw.WindowHint(glfw.ContextVersionMajor, 4)
+	glfw.WindowHint(glfw.ContextVersionMinor, 5)
 	if useStrictCoreProfile {
 		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
@@ -41,6 +41,7 @@ func main() {
 	}
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	fmt.Println("Opengl version", version)
+	fmt.Println("hex", 0x11)
 
 	// code from here
 	gltext.IsDebug = false
