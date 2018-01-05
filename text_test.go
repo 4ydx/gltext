@@ -2,6 +2,7 @@ package gltext
 
 import (
 	"testing"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 func TestHasRune(t *testing.T) {
@@ -38,6 +39,7 @@ func TestClickedCharacter(t *testing.T) {
 
 	// click was just around the middle of the screen
 	xPos := float64(51)
+	yPos := float64(0)
 
 	// -20 to -10 is A
 	// -10 to +10 is B
@@ -47,7 +49,7 @@ func TestClickedCharacter(t *testing.T) {
 	text.CharSpacing = append(text.CharSpacing, 20)
 	text.CharSpacing = append(text.CharSpacing, 10)
 
-	index, side := text.ClickedCharacter(xPos)
+	index, side := text.ClickedCharacter(xPos, yPos)
 	if index != 1 {
 		t.Error("Expecting index 1")
 	}
@@ -61,7 +63,7 @@ func TestBoundingBox(t *testing.T) {
 	text.X1 = Point{-10, -10}
 	text.X2 = Point{+10, +10}
 	text.Font = &Font{}
-	text.SetPosition(10, 5)
+	text.SetPosition(mgl32.Vec2{10.0, 5.0})
 	x1, x2 := text.GetBoundingBox()
 	if x1.X != 0 || x1.Y != -5 {
 		t.Error(x1)

@@ -5,7 +5,7 @@
 package gltext
 
 import (
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/gl/v4.5-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"image"
 )
@@ -109,7 +109,7 @@ func NewFont(config *FontConfig) (f *Font, err error) {
 
 	// save to disk for testing
 	if IsDebug {
-		err = SaveImage(".", config.Image)
+		err = SaveImage(".", "debug", config.Image)
 		if err != nil {
 			return f, err
 		}

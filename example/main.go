@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/4ydx/gltext"
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/gl/v4.5-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/image/math/fixed"
@@ -11,11 +11,11 @@ import (
 	"runtime"
 )
 
-var useStrictCoreProfile = (runtime.GOOS == "darwin")
+func init() {
+	runtime.LockOSThread()
+}
 
 func main() {
-	runtime.LockOSThread()
-
 	err := glfw.Init()
 	if err != nil {
 		panic("glfw error")
@@ -23,62 +23,60 @@ func main() {
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.Resizable, glfw.False)
-	glfw.WindowHint(glfw.ContextVersionMajor, 3)
-	glfw.WindowHint(glfw.ContextVersionMinor, 3)
-	if useStrictCoreProfile {
-		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-	}
-	glfw.WindowHint(glfw.OpenGLDebugContext, glfw.True)
+	glfw.WindowHint(glfw.ContextVersionMajor, 4)
+	glfw.WindowHint(glfw.ContextVersionMinor, 5)
+	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 
-	window, err := glfw.CreateWindow(640, 480, "Testing", nil, nil)
+	window, err := glfw.CreateWindow(640, 480, "Title", nil, nil)
 	if err != nil {
 		panic(err)
 	}
+
 	window.MakeContextCurrent()
+
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
-	version := gl.GoStr(gl.GetString(gl.VERSION))
-	fmt.Println("Opengl version", version)
 
-	// code from here
-	gltext.IsDebug = false
+	fmt.Println("Opengl version", gl.GoStr(gl.GetString(gl.VERSION)))
 
-	fd, err := os.Open("font/font_1_honokamin.ttf")
-	if err != nil {
-		panic(err)
-	}
-	defer fd.Close()
+	font, err := gltext.LoadTruetype("fontconfigs", "font_1_honokamin")
+	defer font.Release()
 
-	font, err := gltext.LoadTruetype("fontconfigs")
 	if err == nil {
 		fmt.Println("Font loaded from disk...")
 	} else {
-		// Japanese character ranges
-		// http://www.rikai.com/library/kanjitables/kanji_codes.unicode.shtml
-		// http://www.binaryhexconverter.com/hex-to-decimal-converter
-		// 3000 - 3030 -> 12288 - 12336
-		// 3040 - 309f -> 12352 - 12447
-		// 30a0 - 30ff -> 12448 - 12543
-		// 4e00 - 9faf -> 19968 - 40879
-		// ff00 - ffef -> 65280 - 65519
+		fd, err := os.Open("font/font_1_honokamin.ttf")
+		if err != nil {
+			panic(err)
+		}
+		defer fd.Close()
+
 		// scale := fixed.Int26_6(32)
 		scale := fixed.Int26_6(24)
 		runesPerRow := fixed.Int26_6(128)
+
 		runeRanges := make(gltext.RuneRanges, 0)
-		runeRange := gltext.RuneRange{Low: 12288, High: 12336}
+
+		runeRange := gltext.RuneRange{Low: 0x3000, High: 0x3030}
 		runeRanges = append(runeRanges, runeRange)
-		runeRange = gltext.RuneRange{Low: 12352, High: 12447}
+		runeRange = gltext.RuneRange{Low: 0x3040, High: 0x309f}
 		runeRanges = append(runeRanges, runeRange)
-		runeRange = gltext.RuneRange{Low: 12448, High: 12543}
+		runeRange = gltext.RuneRange{Low: 0x30a0, High: 0x30ff}
 		runeRanges = append(runeRanges, runeRange)
-		runeRange = gltext.RuneRange{Low: 19968, High: 40879}
+		runeRange = gltext.RuneRange{Low: 0x4e00, High: 0x9faf}
 		runeRanges = append(runeRanges, runeRange)
+		runeRange = gltext.RuneRange{Low: 0xff00, High: 0xffef}
+		runeRanges = append(runeRanges, runeRange)
+
 		font, err = gltext.NewTruetype(fd, scale, runeRanges, runesPerRow)
 		if err != nil {
 			panic(err)
 		}
+
+		font.Config.Name = "font_1_honokamin"
+
 		err = font.Config.Save("fontconfigs")
 		if err != nil {
 			panic(err)
@@ -89,32 +87,27 @@ func main() {
 	font.ResizeWindow(float32(width), float32(height))
 
 	scaleMin, scaleMax := float32(1.0), float32(1.1)
+
 	text := gltext.NewText(font, scaleMin, scaleMax)
+	defer text.Release()
+
 	str := "梅干しが大好き。ウメボシガダイスキ。"
 	for _, s := range str {
 		fmt.Printf("%c: %d\n", s, rune(s))
 	}
+
 	text.SetString(str)
-	text.SetColor(mgl32.Vec3{1, 1, 1})
-	text.FadeOutPerFrame = 0.01
+	text.SetColor(mgl32.Vec3{0.0, 0.0, 0.0})
 
-	i := 0
-	gl.ClearColor(0.4, 0.4, 0.4, 0.0)
+	gl.ClearColor(1.0, 1.0, 1.0, 0.0)
+
 	for !window.ShouldClose() {
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		gl.Clear(gl.COLOR_BUFFER_BIT)
 
-		text.SetPosition(mgl32.Vec2{0, float32(i)})
-		i++
-		if i > 200 {
-			i = -200
-		}
+		text.SetPosition(mgl32.Vec2{0, 0})
 		text.Draw()
-		if text.FadeOutPerFrame*text.FadeOutFrameCount > 1.0 {
-			text.FadeOutFrameCount = 0
-		}
+
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
-	text.Release()
-	font.Release()
 }
