@@ -109,7 +109,7 @@ func NewFont(config *FontConfig) (f *Font, err error) {
 
 	// save to disk for testing
 	if IsDebug {
-		err = SaveImage(".", config.Image)
+		err = SaveImage(".", "debug", config.Image)
 		if err != nil {
 			return f, err
 		}

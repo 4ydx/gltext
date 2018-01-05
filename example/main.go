@@ -28,7 +28,7 @@ func main() {
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 
-	window, err := glfw.CreateWindow(640, 480, "Testing", nil, nil)
+	window, err := glfw.CreateWindow(640, 480, "Title", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -41,18 +41,18 @@ func main() {
 
 	fmt.Println("Opengl version", gl.GoStr(gl.GetString(gl.VERSION)))
 
-	fd, err := os.Open("font/Roboto.ttf")
-	if err != nil {
-		panic(err)
-	}
-	defer fd.Close()
-
-	font, err := gltext.LoadTruetype("fontconfigs")
+	font, err := gltext.LoadTruetype("fontconfigs", "font_1_honokamin")
 	defer font.Release()
 
 	if err == nil {
 		fmt.Println("Font loaded from disk...")
 	} else {
+		fd, err := os.Open("font/font_1_honokamin.ttf")
+		if err != nil {
+			panic(err)
+		}
+		defer fd.Close()
+
 		// scale := fixed.Int26_6(32)
 		scale := fixed.Int26_6(24)
 		runesPerRow := fixed.Int26_6(128)
@@ -74,6 +74,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+
+		font.Config.Name = "font_1_honokamin"
+
 		err = font.Config.Save("fontconfigs")
 		if err != nil {
 			panic(err)
