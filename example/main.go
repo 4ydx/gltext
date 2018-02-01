@@ -7,8 +7,10 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/image/math/fixed"
+	"math"
 	"os"
 	"runtime"
+	"time"
 )
 
 var useStrictCoreProfile = (runtime.GOOS == "darwin")
@@ -45,36 +47,26 @@ func main() {
 	// code from here
 	gltext.IsDebug = false
 
-	fd, err := os.Open("font/font_1_honokamin.ttf")
-	if err != nil {
-		panic(err)
-	}
-	defer fd.Close()
-
 	font, err := gltext.LoadTruetype("fontconfigs")
 	if err == nil {
 		fmt.Println("Font loaded from disk...")
 	} else {
+		fd, err := os.Open("font/font_1_honokamin.ttf")
+		if err != nil {
+			panic(err)
+		}
+		defer fd.Close()
 		// Japanese character ranges
 		// http://www.rikai.com/library/kanjitables/kanji_codes.unicode.shtml
-		// http://www.binaryhexconverter.com/hex-to-decimal-converter
-		// 3000 - 3030 -> 12288 - 12336
-		// 3040 - 309f -> 12352 - 12447
-		// 30a0 - 30ff -> 12448 - 12543
-		// 4e00 - 9faf -> 19968 - 40879
-		// ff00 - ffef -> 65280 - 65519
-		// scale := fixed.Int26_6(32)
+		runeRanges := make(gltext.RuneRanges, 0)
+		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x3000, High: 0x3030})
+		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x3040, High: 0x309f})
+		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x30a0, High: 0x30ff})
+		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x4e00, High: 0x9faf})
+		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0xff00, High: 0xffef})
+
 		scale := fixed.Int26_6(24)
 		runesPerRow := fixed.Int26_6(128)
-		runeRanges := make(gltext.RuneRanges, 0)
-		runeRange := gltext.RuneRange{Low: 12288, High: 12336}
-		runeRanges = append(runeRanges, runeRange)
-		runeRange = gltext.RuneRange{Low: 12352, High: 12447}
-		runeRanges = append(runeRanges, runeRange)
-		runeRange = gltext.RuneRange{Low: 12448, High: 12543}
-		runeRanges = append(runeRanges, runeRange)
-		runeRange = gltext.RuneRange{Low: 19968, High: 40879}
-		runeRanges = append(runeRanges, runeRange)
 		font, err = gltext.NewTruetype(fd, scale, runeRanges, runesPerRow)
 		if err != nil {
 			panic(err)
@@ -99,19 +91,38 @@ func main() {
 	text.FadeOutPerFrame = 0.01
 
 	i := 0
+	start := time.Now()
+
 	gl.ClearColor(0.4, 0.4, 0.4, 0.0)
 	for !window.ShouldClose() {
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		gl.Clear(gl.COLOR_BUFFER_BIT)
 
+		// Position can be set freely
 		text.SetPosition(mgl32.Vec2{0, float32(i)})
 		i++
 		if i > 200 {
 			i = -200
 		}
 		text.Draw()
-		if text.FadeOutPerFrame*text.FadeOutFrameCount > 1.0 {
-			text.FadeOutFrameCount = 0
+
+		// just for illustrative purposes
+		// i imagine that user interaction of some sort will trigger these rather than a moment in time
+
+		// fade out
+		if math.Floor(time.Now().Sub(start).Seconds()) == 5 {
+			text.BeginFadeOut()
 		}
+
+		// show text
+		if math.Floor(time.Now().Sub(start).Seconds()) == 10 {
+			text.Show()
+		}
+
+		// hide
+		if math.Floor(time.Now().Sub(start).Seconds()) == 15 {
+			text.Hide()
+		}
+
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}

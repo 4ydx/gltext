@@ -20,6 +20,7 @@ const (
 	CSUnknown
 )
 
+// Text is not designed to be accessed concurrently
 type Text struct {
 	Font *Font
 
@@ -36,6 +37,7 @@ type Text struct {
 	scaleMatrix mgl32.Mat4
 
 	// Fadeout reduces alpha
+	FadeOutBegun      bool
 	FadeOutFrameCount float32 // number of frames since drawing began
 	FadeOutPerFrame   float32 // smaller value takes more time
 
@@ -262,7 +264,13 @@ func (t *Text) Draw() {
 	if IsDebug {
 		t.BoundingBox.Draw()
 	}
-	t.FadeOutFrameCount++
+	if t.FadeOutBegun {
+		t.FadeOutFrameCount++
+		if t.FadeOutPerFrame*t.FadeOutFrameCount > 1 {
+			// prevent overflow
+			t.FadeOutFrameCount--
+		}
+	}
 
 	gl.UseProgram(t.Font.program)
 
@@ -291,6 +299,23 @@ func (t *Text) Draw() {
 	gl.DrawElements(gl.TRIANGLES, drawCount, gl.UNSIGNED_INT, nil)
 	gl.BindVertexArray(0)
 	gl.Disable(gl.BLEND)
+}
+
+func (t *Text) BeginFadeOut() {
+	if t.FadeOutBegun == false {
+		t.FadeOutBegun = true
+		t.FadeOutFrameCount = 0
+	}
+}
+
+func (t *Text) Show() {
+	t.FadeOutBegun = false
+	t.FadeOutFrameCount = 0
+}
+
+func (t *Text) Hide() {
+	t.FadeOutBegun = false
+	t.FadeOutFrameCount = 1.0 / t.FadeOutPerFrame
 }
 
 // centerTheData prepares the value "centered_position" found in the font shader
