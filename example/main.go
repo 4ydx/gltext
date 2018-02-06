@@ -56,6 +56,7 @@ func main() {
 			panic(err)
 		}
 		defer fd.Close()
+
 		// Japanese character ranges
 		// http://www.rikai.com/library/kanjitables/kanji_codes.unicode.shtml
 		runeRanges := make(gltext.RuneRanges, 0)

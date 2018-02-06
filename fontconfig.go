@@ -58,13 +58,19 @@ func (fc *FontConfig) Load(rootPath string) (err error) {
 
 // Save writes font configuration data to the given stream as JSON data.
 func (fc *FontConfig) Save(rootPath string) error {
-	//data, err := json.MarshalIndent(fc, "", "  ")
+	if _, err := os.Stat(rootPath); err != nil {
+		if os.IsNotExist(err) {
+			os.MkdirAll(rootPath, os.ModeDir|os.ModePerm)
+		} else {
+			return err
+		}
+	}
 	data, err := json.Marshal(fc)
 	if err != nil {
 		return err
 	}
 	file := fmt.Sprintf("%s/font.config", rootPath)
-	err = ioutil.WriteFile(file, data, 0600)
+	err = ioutil.WriteFile(file, data, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -75,7 +81,7 @@ func (fc *FontConfig) Save(rootPath string) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(file, data, 0600)
+	err = ioutil.WriteFile(file, data, os.ModePerm)
 	return err
 }
 
