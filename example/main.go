@@ -78,11 +78,11 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		font, err = v41.NewFont(config)
+		err = config.Save("fontconfigs")
 		if err != nil {
 			panic(err)
 		}
-		err = config.Save("fontconfigs")
+		font, err = v41.NewFont(config)
 		if err != nil {
 			panic(err)
 		}
