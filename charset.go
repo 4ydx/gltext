@@ -23,7 +23,7 @@ type Glyph struct {
 	Advance int `json:"advance"`
 }
 
-func (g *Glyph) GetTexturePositions(font *Font) (tP1, tP2 Point) {
+func (g *Glyph) GetTexturePositions(font FontLike) (tP1, tP2 Point) {
 	// Quad width/height
 	vw := float32(g.Width)
 	vh := float32(g.Height)
@@ -46,10 +46,10 @@ func (g *Glyph) GetTexturePositions(font *Font) (tP1, tP2 Point) {
 	// See the file example_image.png.
 
 	// tP1 = Point{X: float32(g.X) / font.textureWidth, Y: float32(g.Y) / font.textureHeight}
-	tP1 = Point{X: float32(g.X) / font.textureWidth, Y: float32(g.Y+1) / font.textureHeight}
+	tP1 = Point{X: float32(g.X) / font.GetTextureWidth(), Y: float32(g.Y+1) / font.GetTextureHeight()}
 
 	// texture point 2
-	tP2 = Point{X: (float32(g.X) + vw) / font.textureWidth, Y: (float32(g.Y) + vh) / font.textureHeight}
+	tP2 = Point{X: (float32(g.X) + vw) / font.GetTextureWidth(), Y: (float32(g.Y) + vh) / font.GetTextureHeight()}
 
 	return
 }

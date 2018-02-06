@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package gltext
+package v41
 
 import (
+	"github.com/4ydx/gltext"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"image"
@@ -54,11 +55,11 @@ void main() {
 ` + "\x00"
 
 type Font struct {
-	Config         *FontConfig // Character set for this font.
-	textureID      uint32      // Holds the glyph texture id.
-	maxGlyphWidth  int         // Largest glyph width.
-	maxGlyphHeight int         // Largest glyph height.
-	program        uint32      // program compiled from shaders
+	Config         *gltext.FontConfig // Character set for this font.
+	textureID      uint32             // Holds the glyph texture id.
+	maxGlyphWidth  int                // Largest glyph width.
+	maxGlyphHeight int                // Largest glyph height.
+	program        uint32             // program compiled from shaders
 
 	// attributes
 	centeredPositionAttribute uint32 // vertex centered_position required for scaling around the orthographic projections center
@@ -87,12 +88,23 @@ type Font struct {
 	WindowHeight  float32
 }
 
-func NewFont(config *FontConfig) (f *Font, err error) {
+func (f *Font) GetTextureWidth() float32 {
+	return f.textureWidth
+}
+
+func (f *Font) GetTextureHeight() float32 {
+	return f.textureHeight
+}
+
+func NewFont(config *gltext.FontConfig) (f *Font, err error) {
+	if config == nil {
+		panic("Nil config")
+	}
 	f = &Font{}
 	f.Config = config
 
 	// Resize image to next power-of-two.
-	config.Image = Pow2Image(config.Image).(*image.NRGBA)
+	config.Image = gltext.Pow2Image(config.Image).(*image.NRGBA)
 	ib := config.Image.Bounds()
 
 	f.textureWidth = float32(ib.Dx())
@@ -108,8 +120,8 @@ func NewFont(config *FontConfig) (f *Font, err error) {
 	}
 
 	// save to disk for testing
-	if IsDebug {
-		err = SaveImage(".", config.Image)
+	if gltext.IsDebug {
+		err = gltext.SaveImage(".", config.Image)
 		if err != nil {
 			return f, err
 		}

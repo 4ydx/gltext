@@ -67,7 +67,7 @@ func (rr RuneRanges) GetGlyphIndex(char rune) rune {
 //
 // The low and high values determine the lower and upper rune limits
 // we should load for this font. For standard ASCII this would be: 32, 127.
-func NewTruetype(r io.Reader, scale fixed.Int26_6, runeRanges RuneRanges, runesPerRow fixed.Int26_6) (*Font, error) {
+func NewTruetypeFontConfig(r io.Reader, scale fixed.Int26_6, runeRanges RuneRanges, runesPerRow fixed.Int26_6) (*FontConfig, error) {
 	if !runeRanges.Validate() {
 		return nil, errors.New("Invalid rune ranges supplied.")
 	}
@@ -84,7 +84,7 @@ func NewTruetype(r io.Reader, scale fixed.Int26_6, runeRanges RuneRanges, runesP
 	}
 
 	// Create our FontConfig type.
-	var fc FontConfig
+	fc := &FontConfig{}
 	length := rune(0)
 	for _, r := range runeRanges {
 		length += r.High - r.Low + 1
@@ -149,14 +149,14 @@ func NewTruetype(r io.Reader, scale fixed.Int26_6, runeRanges RuneRanges, runesP
 			gi++
 		}
 	}
-	return NewFont(&fc)
+	return fc, nil
 }
 
-func LoadTruetype(rootPath string) (*Font, error) {
-	var fc FontConfig
+func LoadTruetypeFontConfig(rootPath string) (*FontConfig, error) {
+	var fc *FontConfig
 	err := fc.Load(rootPath)
 	if err != nil {
 		return nil, err
 	}
-	return NewFont(&fc)
+	return fc, nil
 }

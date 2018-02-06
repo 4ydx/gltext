@@ -1,18 +1,24 @@
-package gltext
+// Copyright 2012 The go-gl Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+package v45
 
 import (
+	"github.com/4ydx/gltext"
+	"github.com/go-gl/mathgl/mgl32"
 	"testing"
 )
 
 func TestHasRune(t *testing.T) {
 	f := &Font{}
-	f.Config = &FontConfig{}
-	f.Config.Glyphs = make(Charset, 100)
-	f.Config.RuneRanges = make(RuneRanges, 0)
+	f.Config = &gltext.FontConfig{}
+	f.Config.Glyphs = make(gltext.Charset, 100)
+	f.Config.RuneRanges = make(gltext.RuneRanges, 0)
 
-	r := RuneRange{Low: 30, High: 40}
+	r := gltext.RuneRange{Low: 30, High: 40}
 	f.Config.RuneRanges = append(f.Config.RuneRanges, r)
-	r = RuneRange{Low: 100, High: 400}
+	r = gltext.RuneRange{Low: 100, High: 400}
 	f.Config.RuneRanges = append(f.Config.RuneRanges, r)
 
 	if !f.Config.RuneRanges.Validate() {
@@ -47,7 +53,7 @@ func TestClickedCharacter(t *testing.T) {
 	text.CharSpacing = append(text.CharSpacing, 20)
 	text.CharSpacing = append(text.CharSpacing, 10)
 
-	index, side := text.ClickedCharacter(xPos)
+	index, side := text.ClickedCharacter(xPos, 0)
 	if index != 1 {
 		t.Error("Expecting index 1")
 	}
@@ -58,10 +64,11 @@ func TestClickedCharacter(t *testing.T) {
 
 func TestBoundingBox(t *testing.T) {
 	text := &Text{}
-	text.X1 = Point{-10, -10}
-	text.X2 = Point{+10, +10}
+	text.X1 = gltext.Point{-10, -10}
+	text.X2 = gltext.Point{+10, +10}
 	text.Font = &Font{}
-	text.SetPosition(10, 5)
+	v := mgl32.Vec2{10, 5}
+	text.SetPosition(v)
 	x1, x2 := text.GetBoundingBox()
 	if x1.X != 0 || x1.Y != -5 {
 		t.Error(x1)

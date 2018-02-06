@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/4ydx/gltext"
+	"github.com/4ydx/gltext/v4.1"
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -47,8 +48,13 @@ func main() {
 	// code from here
 	gltext.IsDebug = false
 
-	font, err := gltext.LoadTruetype("fontconfigs")
+	var font *v41.Font
+	config, err := gltext.LoadTruetypeFontConfig("fontconfigs")
 	if err == nil {
+		font, err = v41.NewFont(config)
+		if err != nil {
+			panic(err)
+		}
 		fmt.Println("Font loaded from disk...")
 	} else {
 		fd, err := os.Open("font/font_1_honokamin.ttf")
@@ -68,11 +74,15 @@ func main() {
 
 		scale := fixed.Int26_6(24)
 		runesPerRow := fixed.Int26_6(128)
-		font, err = gltext.NewTruetype(fd, scale, runeRanges, runesPerRow)
+		config, err = gltext.NewTruetypeFontConfig(fd, scale, runeRanges, runesPerRow)
 		if err != nil {
 			panic(err)
 		}
-		err = font.Config.Save("fontconfigs")
+		font, err = v41.NewFont(config)
+		if err != nil {
+			panic(err)
+		}
+		err = config.Save("fontconfigs")
 		if err != nil {
 			panic(err)
 		}
@@ -82,7 +92,7 @@ func main() {
 	font.ResizeWindow(float32(width), float32(height))
 
 	scaleMin, scaleMax := float32(1.0), float32(1.1)
-	text := gltext.NewText(font, scaleMin, scaleMax)
+	text := v41.NewText(font, scaleMin, scaleMax)
 	str := "梅干しが大好き。ウメボシガダイスキ。"
 	for _, s := range str {
 		fmt.Printf("%c: %d\n", s, rune(s))
