@@ -121,7 +121,7 @@ func NewFont(config *gltext.FontConfig) (f *Font, err error) {
 
 	// save to disk for testing
 	if gltext.IsDebug {
-		err = gltext.SaveImage(".", config.Image)
+		err = gltext.SaveImage(".", "Debug", config.Image)
 		if err != nil {
 			return f, err
 		}
