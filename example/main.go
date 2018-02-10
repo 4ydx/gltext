@@ -49,7 +49,7 @@ func main() {
 	gltext.IsDebug = false
 
 	var font *v41.Font
-	config, err := gltext.LoadTruetypeFontConfig("fontconfigs")
+	config, err := gltext.LoadTruetypeFontConfig("fontconfigs", "font_1_honokamin")
 	if err == nil {
 		font, err = v41.NewFont(config)
 		if err != nil {
@@ -78,6 +78,8 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		config.Name = "font_1_honokamin"
+
 		err = config.Save("fontconfigs")
 		if err != nil {
 			panic(err)

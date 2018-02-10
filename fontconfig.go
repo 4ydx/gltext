@@ -33,11 +33,13 @@ type FontConfig struct {
 	Glyphs Charset
 
 	Image *image.NRGBA `json:"-"`
+
+	Name string
 }
 
 // Load reads font configuration data from the given JSON encoded stream.
 func (fc *FontConfig) Load(rootPath string) (err error) {
-	file := fmt.Sprintf("%s/font.config", rootPath)
+	file := fmt.Sprintf("%s/%s.config", rootPath, fc.Name)
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return
@@ -47,7 +49,7 @@ func (fc *FontConfig) Load(rootPath string) (err error) {
 		return err
 	}
 	fmt.Printf("%+v\n", time.Now())
-	fc.Image, err = LoadFontImage(rootPath)
+	fc.Image, err = LoadFontImage(rootPath, fc.Name)
 	if err != nil {
 		return err
 	}
@@ -69,7 +71,7 @@ func (fc *FontConfig) Save(rootPath string) error {
 	if err != nil {
 		return err
 	}
-	file := fmt.Sprintf("%s/font.config", rootPath)
+	file := fmt.Sprintf("%s/%s.config", rootPath, fc.Name)
 	err = ioutil.WriteFile(file, data, os.ModePerm)
 	if err != nil {
 		return err
@@ -77,7 +79,7 @@ func (fc *FontConfig) Save(rootPath string) error {
 	if fc.Image == nil {
 		return errors.New("Should not be nil.")
 	}
-	err = SaveImage(rootPath, fc.Image)
+	err = SaveImage(rootPath, fc.Name, fc.Image)
 	if err != nil {
 		return err
 	}
@@ -85,13 +87,13 @@ func (fc *FontConfig) Save(rootPath string) error {
 	return err
 }
 
-func LoadFontImage(rootPath string) (*image.NRGBA, error) {
-	file := fmt.Sprintf("%s/image.png", rootPath)
+func LoadFontImage(rootPath, name string) (*image.NRGBA, error) {
+	file := fmt.Sprintf("%s/%s.png", rootPath, name)
 	return LoadImage(file)
 }
 
-func SaveImage(rootPath string, img *image.NRGBA) error {
-	file := fmt.Sprintf("%s/image.png", rootPath)
+func SaveImage(rootPath, name string, img *image.NRGBA) error {
+	file := fmt.Sprintf("%s/%s.png", rootPath, name)
 	image, err := os.Create(file)
 	if err != nil {
 		return err

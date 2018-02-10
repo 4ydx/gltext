@@ -152,8 +152,10 @@ func NewTruetypeFontConfig(r io.Reader, scale fixed.Int26_6, runeRanges RuneRang
 	return fc, nil
 }
 
-func LoadTruetypeFontConfig(rootPath string) (*FontConfig, error) {
-	fc := &FontConfig{}
+func LoadTruetypeFontConfig(rootPath, name string) (*FontConfig, error) {
+	fc := &FontConfig{} 
+	fc.Name = name;
+
 	err := fc.Load(rootPath)
 	if err != nil {
 		return nil, err
