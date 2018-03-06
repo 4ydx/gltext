@@ -1,6 +1,8 @@
 package gltext
 
 import (
+	"golang.org/x/image/math/fixed"
+	"os"
 	"testing"
 )
 
@@ -77,5 +79,45 @@ func TestGetGlyphIndex(t *testing.T) {
 	index = runeRanges.GetGlyphIndex(390)
 	if index != 301 {
 		t.Error("Bad index", index)
+	}
+}
+
+func TestGetGlyphIndexEdge(t *testing.T) {
+	IsDebug = true
+
+	runeRanges := RuneRanges{{Low: 32, High: 40}}
+	if !runeRanges.Validate() {
+		t.Error("Not validating properly.")
+	}
+
+	char := ' '
+	index := runeRanges.GetGlyphIndex(char)
+	if index != 0 {
+		t.Error("Bad index", index)
+	}
+	char = '('
+	index = runeRanges.GetGlyphIndex(char)
+	if index != 8 {
+		t.Error("Bad index", index)
+	}
+
+	fd, err := os.Open("font/font_1_honokamin.ttf")
+	if err != nil {
+		panic(err)
+	}
+	defer fd.Close()
+
+	scale := fixed.Int26_6(24)
+	runesPerRow := fixed.Int26_6(3)
+	config, err := NewTruetypeFontConfig(fd, scale, runeRanges, runesPerRow)
+	if err != nil {
+		panic(err)
+	}
+	config.Name = "font_1_honokamin"
+
+	// save png for manual inspection
+	err = config.Save("fontconfigs")
+	if err != nil {
+		panic(err)
 	}
 }

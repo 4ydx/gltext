@@ -66,6 +66,7 @@ func main() {
 		// Japanese character ranges
 		// http://www.rikai.com/library/kanjitables/kanji_codes.unicode.shtml
 		runeRanges := make(gltext.RuneRanges, 0)
+		runeRanges = append(runeRanges, gltext.RuneRange{Low: 32, High: 128})
 		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x3000, High: 0x3030})
 		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x3040, High: 0x309f})
 		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x30a0, High: 0x30ff})
@@ -95,7 +96,7 @@ func main() {
 
 	scaleMin, scaleMax := float32(1.0), float32(1.1)
 	text := v41.NewText(font, scaleMin, scaleMax)
-	str := "梅干しが大好き。ウメボシガダイスキ。"
+	str := "梅干しが大好き。ウメボシガダイスキ。1 2 3 4 !"
 	for _, s := range str {
 		fmt.Printf("%c: %d\n", s, rune(s))
 	}

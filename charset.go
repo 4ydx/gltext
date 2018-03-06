@@ -28,7 +28,6 @@ func (g *Glyph) GetTexturePositions(font FontLike) (tP1, tP2 Point) {
 	vw := float32(g.Width)
 	vh := float32(g.Height)
 
-	// texture point 1
 	// Unfortunately with the current font, if I don't add a small offset to the Y axis location
 	// the bottom edge of the character above might appear.
 	//
@@ -45,7 +44,7 @@ func (g *Glyph) GetTexturePositions(font FontLike) (tP1, tP2 Point) {
 	// about the glyph layout or this will have to be tweaked based on the font being used.
 	// See the file example_image.png.
 
-	// tP1 = Point{X: float32(g.X) / font.textureWidth, Y: float32(g.Y) / font.textureHeight}
+	// texture point 1
 	tP1 = Point{X: float32(g.X) / font.GetTextureWidth(), Y: float32(g.Y+1) / font.GetTextureHeight()}
 
 	// texture point 2

@@ -129,6 +129,14 @@ func NewTruetypeFontConfig(r io.Reader, scale fixed.Int26_6, runeRanges RuneRang
 			index := ttf.Index(ch)
 			metric := ttf.HMetric(scale, index)
 
+			if gi%runesPerRow == 0 {
+				gx = 0
+				if gi > 0 {
+					gy += gh
+				}
+			} else {
+				gx += gw
+			}
 			fc.Glyphs[gi].Advance = int(metric.AdvanceWidth)
 			fc.Glyphs[gi].X = int(gx)
 			fc.Glyphs[gi].Y = int(gy)
@@ -137,15 +145,6 @@ func NewTruetypeFontConfig(r io.Reader, scale fixed.Int26_6, runeRanges RuneRang
 
 			pt := freetype.Pt(int(gx), int(gy)+int(c.PointToFixed(float64(scale))>>6))
 			c.DrawString(string(ch), pt)
-
-			if gi%runesPerRow == 0 {
-				if gi > 0 {
-					gx = 0
-					gy += gh
-				}
-			} else {
-				gx += gw
-			}
 			gi++
 		}
 	}

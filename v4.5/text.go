@@ -445,8 +445,7 @@ func (t *Text) makeBufferData(indices []rune) {
 		if glyphIndex >= 0 {
 			if gltext.IsDebug {
 				prefix := gltext.DebugPrefix()
-				fmt.Println("glyphIndex", glyphIndex)
-				fmt.Printf("%s rune %+v line at %f", prefix, glyphs[glyphIndex], lineX)
+				fmt.Printf("%s png index %3d: %s rune %+v line at %f", prefix, glyphIndex, string(r), glyphs[glyphIndex], lineX)
 			}
 			advance := float32(glyphs[glyphIndex].Advance)
 			vw := float32(glyphs[glyphIndex].Width)
