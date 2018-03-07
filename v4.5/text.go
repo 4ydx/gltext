@@ -529,5 +529,8 @@ func (t *Text) makeBufferData(indices []rune) {
 			}
 		}
 	}
+	if gltext.IsDebug {
+		gltext.PrintVBO(t.vboData, t.Font.GetTextureHeight(), t.Font.GetTextureWidth())
+	}
 	return
 }

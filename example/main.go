@@ -46,7 +46,7 @@ func main() {
 	fmt.Println("Opengl version", version)
 
 	// code from here
-	gltext.IsDebug = false
+	gltext.IsDebug = true
 
 	var font *v41.Font
 	config, err := gltext.LoadTruetypeFontConfig("fontconfigs", "font_1_honokamin")
@@ -96,7 +96,7 @@ func main() {
 
 	scaleMin, scaleMax := float32(1.0), float32(1.1)
 	text := v41.NewText(font, scaleMin, scaleMax)
-	str := "梅干しが大好き。ウメボシガダイスキ。1 2 3 4 !"
+	str := "大好き"
 	for _, s := range str {
 		fmt.Printf("%c: %d\n", s, rune(s))
 	}
