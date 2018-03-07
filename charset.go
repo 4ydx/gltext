@@ -45,7 +45,7 @@ func (g *Glyph) GetTexturePositions(font FontLike) (tP1, tP2 Point) {
 	// See the file example_image.png.
 
 	// texture point 1
-	tP1 = Point{X: float32(g.X) / font.GetTextureWidth(), Y: float32(g.Y+1) / font.GetTextureHeight()}
+	tP1 = Point{X: float32(g.X) / font.GetTextureWidth(), Y: float32(g.Y) / font.GetTextureHeight()}
 
 	// texture point 2
 	tP2 = Point{X: (float32(g.X) + vw) / font.GetTextureWidth(), Y: (float32(g.Y) + vh) / font.GetTextureHeight()}
