@@ -448,7 +448,9 @@ func (t *Text) makeBufferData(indices []rune) {
 				fmt.Printf("%s png index %3d: %s rune %+v line at %f", prefix, glyphIndex, string(r), glyphs[glyphIndex], lineX)
 			}
 			advance := float32(glyphs[glyphIndex].Advance)
-			vw := float32(glyphs[glyphIndex].Width)
+
+			// Originally the glyph Width was used, but that results in quads that overlap one another.
+			vw := float32(glyphs[glyphIndex].Advance)
 			vh := float32(glyphs[glyphIndex].Height)
 
 			// used to determine which character inside of the text was clicked

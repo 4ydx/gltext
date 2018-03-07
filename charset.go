@@ -25,7 +25,12 @@ type Glyph struct {
 
 func (g *Glyph) GetTexturePositions(font FontLike) (tP1, tP2 Point) {
 	// Quad width/height
-	vw := float32(g.Width)
+
+	// Originally the ttf width value was being used.  This, however, differs from the Advance value.
+	// This has been changed to advance so that the resulting quads that are generated for text to not
+	// overlap one another.
+	vw := float32(g.Advance)
+
 	vh := float32(g.Height)
 
 	// Unfortunately with the current font, if I don't add a small offset to the Y axis location
