@@ -59,7 +59,9 @@ func (fc *FontConfig) Load(rootPath string) (err error) {
 }
 
 // Save writes font configuration data to the given stream as JSON data.
-func (fc *FontConfig) Save(rootPath string) error {
+func (fc *FontConfig) Save(rootPath, name string) error {
+	fc.Name = name
+
 	if _, err := os.Stat(rootPath); err != nil {
 		if os.IsNotExist(err) {
 			os.MkdirAll(rootPath, os.ModeDir|os.ModePerm)

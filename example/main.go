@@ -79,9 +79,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		config.Name = "font_1_honokamin"
-
-		err = config.Save("fontconfigs")
+		err = config.Save("fontconfigs", "font_1_honokamin")
 		if err != nil {
 			panic(err)
 		}

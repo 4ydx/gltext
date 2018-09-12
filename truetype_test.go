@@ -113,10 +113,8 @@ func TestGetGlyphIndexEdge(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	config.Name = "font_1_honokamin"
-
 	// save png for manual inspection
-	err = config.Save("fontconfigs")
+	err = config.Save("fontconfigs", "font_1_honokamin")
 	if err != nil {
 		panic(err)
 	}
