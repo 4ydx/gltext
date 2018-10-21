@@ -34,7 +34,7 @@ func main() {
 	}
 	glfw.WindowHint(glfw.OpenGLDebugContext, glfw.True)
 
-	window, err := glfw.CreateWindow(640, 480, "Testing", nil, nil)
+	window, err := glfw.CreateWindow(1280, 960, "Testing", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -73,9 +73,9 @@ func main() {
 		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x4e00, High: 0x9faf})
 		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0xff00, High: 0xffef})
 
-		scale := fixed.Int26_6(24)
+		scale := fixed.Int26_6(32)
 		runesPerRow := fixed.Int26_6(128)
-		config, err = gltext.NewTruetypeFontConfig(fd, scale, runeRanges, runesPerRow)
+		config, err = gltext.NewTruetypeFontConfig(fd, scale, runeRanges, runesPerRow, 5)
 		if err != nil {
 			panic(err)
 		}
@@ -92,17 +92,27 @@ func main() {
 	width, height := window.GetSize()
 	font.ResizeWindow(float32(width), float32(height))
 
-	scaleMin, scaleMax := float32(1.0), float32(1.1)
-	text := v41.NewText(font, scaleMin, scaleMax)
-	str := "大好き"
-	for _, s := range str {
-		fmt.Printf("%c: %d\n", s, rune(s))
-	}
-	text.SetString(str)
-	text.SetColor(mgl32.Vec3{1, 1, 1})
-	text.FadeOutPerFrame = 0.01
+	str0 := "! \" # $ ' ( ) + , - . / 0123456789 : "
+	str1 := "; <=> ? @ ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	str2 := "[^_`] abcdefghijklmnopqrstuvwxyz {|}"
+	str3 := "大好きどなにｂｃｄｆｇｈｊｋｌｍｎｐｑ"
 
-	i := 0
+	scaleMin, scaleMax := float32(1.0), float32(1.1)
+	strs := []string{str0, str1, str2, str3}
+	txts := []*v41.Text{}
+	for _, str := range strs {
+		text := v41.NewText(font, scaleMin, scaleMax)
+		text.SetString(str)
+		text.SetColor(mgl32.Vec3{1, 1, 1})
+		text.FadeOutPerFrame = 0.01
+		if gltext.IsDebug {
+			for _, s := range str {
+				fmt.Printf("%c: %d\n", s, rune(s))
+			}
+		}
+		txts = append(txts, text)
+	}
+
 	start := time.Now()
 
 	gl.ClearColor(0.4, 0.4, 0.4, 0.0)
@@ -110,34 +120,34 @@ func main() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		// Position can be set freely
-		text.SetPosition(mgl32.Vec2{0, float32(i)})
-		i++
-		if i > 200 {
-			i = -200
-		}
-		text.Draw()
+		for index, text := range txts {
+			text.SetPosition(mgl32.Vec2{0, float32(index * 50)})
+			text.Draw()
 
-		// just for illustrative purposes
-		// i imagine that user interaction of some sort will trigger these rather than a moment in time
+			// just for illustrative purposes
+			// i imagine that user interaction of some sort will trigger these rather than a moment in time
 
-		// fade out
-		if math.Floor(time.Now().Sub(start).Seconds()) == 5 {
-			text.BeginFadeOut()
-		}
+			// fade out
+			if math.Floor(time.Now().Sub(start).Seconds()) == 5 {
+				text.BeginFadeOut()
+			}
 
-		// show text
-		if math.Floor(time.Now().Sub(start).Seconds()) == 10 {
-			text.Show()
-		}
+			// show text
+			if math.Floor(time.Now().Sub(start).Seconds()) == 10 {
+				text.Show()
+			}
 
-		// hide
-		if math.Floor(time.Now().Sub(start).Seconds()) == 15 {
-			text.Hide()
+			// hide
+			if math.Floor(time.Now().Sub(start).Seconds()) == 15 {
+				text.Hide()
+			}
 		}
 
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
-	text.Release()
+	for _, text := range txts {
+		text.Release()
+	}
 	font.Release()
 }
