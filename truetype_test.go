@@ -85,7 +85,7 @@ func TestGetGlyphIndex(t *testing.T) {
 func TestGetGlyphIndexEdge(t *testing.T) {
 	IsDebug = true
 
-	runeRanges := RuneRanges{{Low: 32, High: 40}}
+	runeRanges := RuneRanges{{Low: 32, High: 128}}
 	if !runeRanges.Validate() {
 		t.Error("Not validating properly.")
 	}
@@ -109,7 +109,7 @@ func TestGetGlyphIndexEdge(t *testing.T) {
 
 	scale := fixed.Int26_6(24)
 	runesPerRow := fixed.Int26_6(3)
-	config, err := NewTruetypeFontConfig(fd, scale, runeRanges, runesPerRow)
+	config, err := NewTruetypeFontConfig(fd, scale, runeRanges, runesPerRow, 0)
 	if err != nil {
 		panic(err)
 	}
