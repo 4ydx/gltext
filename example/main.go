@@ -2,16 +2,17 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"runtime"
+	//"math"
+	//"time"
+
 	"github.com/4ydx/gltext"
-	"github.com/4ydx/gltext/v4.1"
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/4ydx/gltext/v4.5"
+	"github.com/go-gl/gl/v4.5-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/image/math/fixed"
-	//"math"
-	"os"
-	"runtime"
-	//"time"
 )
 
 var useStrictCoreProfile = (runtime.GOOS == "darwin")
@@ -47,10 +48,10 @@ func main() {
 	// code from here
 	gltext.IsDebug = true
 
-	var font *v41.Font
+	var font *v45.Font
 	config, err := gltext.LoadTruetypeFontConfig("fontconfigs", "luxirr")
 	if err == nil {
-		font, err = v41.NewFont(config)
+		font, err = v45.NewFont(config)
 		if err != nil {
 			panic(err)
 		}
@@ -82,7 +83,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		font, err = v41.NewFont(config)
+		font, err = v45.NewFont(config)
 		if err != nil {
 			panic(err)
 		}
@@ -99,9 +100,9 @@ func main() {
 	scaleMin, scaleMax := float32(1.0), float32(1.1)
 	//strs := []string{str0, str1, str2, str3}
 	strs := []string{str0, str1, str2}
-	txts := []*v41.Text{}
+	txts := []*v45.Text{}
 	for _, str := range strs {
-		text := v41.NewText(font, scaleMin, scaleMax)
+		text := v45.NewText(font, scaleMin, scaleMax)
 		text.SetString(str)
 		text.SetColor(mgl32.Vec3{1, 1, 1})
 		text.FadeOutPerFrame = 0.01

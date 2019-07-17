@@ -195,8 +195,6 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 
 	// generate the basic vbo data and bounding box
 	// center the vbo data around the orthographic (0,0) point
-	t.X1 = gltext.Point{X: 0, Y: 0}
-	t.X2 = gltext.Point{X: 0, Y: 0}
 	t.makeBufferData(indices)
 	t.centerTheData(t.getLowerLeft())
 
@@ -362,11 +360,15 @@ func (t *Text) centerTheData(lowerLeft gltext.Point) (err error) {
 		index += 3
 	}
 
-	// update bounding box so that it is centered around (0,0)
+	// lower left
+	t.X1 = gltext.Point{X: 0, Y: 0}
 	t.X1.X += lowerLeft.X
-	t.X2.X += lowerLeft.X
 	t.X1.Y += lowerLeft.Y
-	t.X2.Y += lowerLeft.Y
+
+	// upper right
+	t.X2 = gltext.Point{X: 0, Y: 0}
+	t.X2.X += -lowerLeft.X
+	t.X2.Y += -lowerLeft.Y
 
 	// prepare objects for drawing the bounding box
 	if gltext.IsDebug {

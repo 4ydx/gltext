@@ -195,8 +195,6 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 
 	// generate the basic vbo data and bounding box
 	// center the vbo data around the orthographic (0,0) point
-	t.X1 = gltext.Point{0, 0}
-	t.X2 = gltext.Point{0, 0}
 	t.makeBufferData(indices)
 	t.centerTheData(t.getLowerLeft())
 
@@ -252,6 +250,19 @@ func (t *Text) SetPosition(v mgl32.Vec2) {
 	t.Position = v
 }
 
+func (t *Text) DragPosition(x, y float32) {
+	t.Position[0] += x
+	t.Position[1] += y
+
+	// transform to orthographic coordinates ranged -1 to 1 for the shader
+	t.finalPosition[0] = t.Position.X() / (t.Font.WindowWidth / 2)
+	t.finalPosition[1] = t.Position.Y() / (t.Font.WindowHeight / 2)
+	if gltext.IsDebug {
+		t.BoundingBox.finalPosition[0] = t.Position.X() / (t.Font.WindowWidth / 2)
+		t.BoundingBox.finalPosition[1] = t.Position.Y() / (t.Font.WindowHeight / 2)
+	}
+}
+
 func (t *Text) GetBoundingBox() (X1, X2 gltext.Point) {
 	x, y := t.Position.X(), t.Position.Y()
 	X1.X = t.X1.X + x
@@ -272,7 +283,6 @@ func (t *Text) Draw() {
 			t.FadeOutFrameCount--
 		}
 	}
-
 	gl.UseProgram(t.Font.program)
 
 	gl.ActiveTexture(gl.TEXTURE0)
@@ -351,10 +361,13 @@ func (t *Text) centerTheData(lowerLeft gltext.Point) (err error) {
 	}
 
 	// update bounding box so that it is centered around (0,0)
+	t.X1 = gltext.Point{X: 0, Y: 0}
 	t.X1.X += lowerLeft.X
-	t.X2.X += lowerLeft.X
 	t.X1.Y += lowerLeft.Y
-	t.X2.Y += lowerLeft.Y
+
+	t.X2 = gltext.Point{X: 0, Y: 0}
+	t.X2.X += -lowerLeft.X
+	t.X2.Y += -lowerLeft.Y
 
 	// prepare objects for drawing the bounding box
 	if gltext.IsDebug {

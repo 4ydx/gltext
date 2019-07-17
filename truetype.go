@@ -6,14 +6,15 @@ package gltext
 
 import (
 	"errors"
-	"github.com/golang/freetype"
-	"github.com/golang/freetype/truetype"
-	"golang.org/x/image/math/fixed"
 	"image"
 	"image/draw"
 	"io"
 	"io/ioutil"
 	"sort"
+
+	"github.com/golang/freetype"
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/math/fixed"
 )
 
 // RuneRanges specify the rune ranges for ordered disjoint subsets of the ttf
