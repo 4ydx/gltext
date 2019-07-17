@@ -11,13 +11,15 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-// CharacterSide shows which side of a character is
-// clicked
+// CharacterSide shows which side of a character is clicked
 type CharacterSide int
 
 const (
+	// CSLeft indicates that a click happened on the left side of a character
 	CSLeft CharacterSide = iota
+	// CSRight indicates that a click happened on the right side of a character
 	CSRight
+	// CSUnknown indicates that the side cannot be determined
 	CSUnknown
 )
 
@@ -42,9 +44,6 @@ type Text struct {
 	FadeOutFrameCount float32 // number of frames since drawing began
 	FadeOutPerFrame   float32 // smaller value takes more time
 
-	// bounding box of text
-	BoundingBox *BoundingBox
-
 	// general opengl values
 	vao           uint32
 	vbo           uint32
@@ -60,20 +59,19 @@ type Text struct {
 	// no longer than this string
 	MaxRuneCount int
 
-	// X1, X2: the lower left and upper right points of a box that bounds the text with a center point (0,0)
+	// the lower left and upper right points of a box that bounds the text with a center point (0,0)
+	LowerLeft   gltext.Point
+	UpperRight  gltext.Point
+	BoundingBox *BoundingBox
 
-	// lower left
-	X1 gltext.Point
-	// upper right
-	X2 gltext.Point
-
-	// Screen position away from center
+	// Screen position where the origin is (0,0) at the center of the screen
 	Position mgl32.Vec2
 
 	String      string
 	CharSpacing []float32
 }
 
+// GetLength returns the number of characters in the text
 func (t *Text) GetLength() int {
 	return t.eboIndexCount / 6
 }
@@ -89,11 +87,11 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 	// "resting state" of a text object is the min scale
 	t.ScaleMin, t.ScaleMax = scaleMin, scaleMax
 	t.SetScale(1)
-	glfloat_size := int32(4)
+	glfloatSize := int32(4)
 
 	// stride of the buffered data
-	xy_count := int32(2)
-	stride := xy_count + int32(2)
+	xyCount := int32(2)
+	stride := xyCount + int32(2)
 
 	gl.GenVertexArrays(1, &t.vao)
 	gl.GenBuffers(1, &t.vbo)
@@ -117,7 +115,7 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 		2,
 		gl.FLOAT,
 		false,
-		glfloat_size*stride,
+		glfloatSize*stride,
 		gl.PtrOffset(0),
 	)
 
@@ -127,8 +125,8 @@ func NewText(f *Font, scaleMin, scaleMax float32) (t *Text) {
 		2,
 		gl.FLOAT,
 		false,
-		glfloat_size*stride,
-		gl.PtrOffset(int(glfloat_size*xy_count)),
+		glfloatSize*stride,
+		gl.PtrOffset(int(glfloatSize*xyCount)),
 	)
 
 	// ebo
@@ -171,6 +169,7 @@ func (t *Text) AddScale(s float32) bool {
 	return true
 }
 
+// SetColor of the text
 func (t *Text) SetColor(color mgl32.Vec3) {
 	t.color = color
 }
@@ -185,7 +184,7 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	t.String = string(indices)
 
 	// ebo, vbo data
-	glfloat_size := int32(4)
+	glfloatSize := int32(4)
 
 	t.vboIndexCount = len(indices) * 4 * 2 * 2 // 4 indexes per rune (containing 2 position + 2 texture)
 	t.eboIndexCount = len(indices) * 6         // each rune requires 6 triangle indices for a quad
@@ -196,11 +195,13 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	// generate the basic vbo data and bounding box
 	// center the vbo data around the orthographic (0,0) point
 	t.makeBufferData(indices)
-	t.centerTheData(t.getLowerLeft())
-
+	if err := t.centerTheData(); err != nil {
+		fmt.Println(err)
+		return
+	}
 	if gltext.IsDebug {
 		prefix := gltext.DebugPrefix()
-		fmt.Printf("%s bounding box %v %v\n", prefix, t.X1, t.X2)
+		fmt.Printf("%s bounding box %v %v\n", prefix, t.LowerLeft, t.UpperRight)
 		fmt.Printf("%s text vbo data\n%v\n", prefix, t.vboData)
 		fmt.Printf("%s text ebo data\n%v\n", prefix, t.eboData)
 	}
@@ -209,10 +210,10 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 		gl.BindVertexArray(t.vao)
 		gl.BindBuffer(gl.ARRAY_BUFFER, t.vbo)
 		gl.BufferData(
-			gl.ARRAY_BUFFER, int(glfloat_size)*t.vboIndexCount, gl.Ptr(t.vboData), gl.DYNAMIC_DRAW)
+			gl.ARRAY_BUFFER, int(glfloatSize)*t.vboIndexCount, gl.Ptr(t.vboData), gl.DYNAMIC_DRAW)
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, t.ebo)
 		gl.BufferData(
-			gl.ELEMENT_ARRAY_BUFFER, int(glfloat_size)*t.eboIndexCount, gl.Ptr(t.eboData), gl.DYNAMIC_DRAW)
+			gl.ELEMENT_ARRAY_BUFFER, int(glfloatSize)*t.eboIndexCount, gl.Ptr(t.eboData), gl.DYNAMIC_DRAW)
 		gl.BindVertexArray(0)
 
 		// possibly not necesssary?
@@ -225,21 +226,11 @@ func (t *Text) SetString(fs string, argv ...interface{}) {
 	t.SetPosition(t.Position)
 }
 
-// The block of text is positioned around the center of the screen, which in this case must
-// be considered (0,0).  This is necessary for orthographic projection and scaling to work
-// well together.  If the text is *not* at (0,0), then scaling doesnt produce a direct zoom effect.
-func (t *Text) getLowerLeft() (lowerLeft gltext.Point) {
-	lineWidthHalf := (t.X2.X - t.X1.X) / 2
-	lineHeightHalf := (t.X2.Y - t.X1.Y) / 2
-
-	lowerLeft.X = -lineWidthHalf
-	lowerLeft.Y = -lineHeightHalf
-	return
-}
-
 // SetPosition prepares variables passed to the shader as well as values
 // used for bounding box calculations when clicking or hovering above text
 func (t *Text) SetPosition(v mgl32.Vec2) {
+	t.Position = v
+
 	// transform to orthographic coordinates ranged -1 to 1 for the shader
 	t.finalPosition[0] = v.X() / (t.Font.WindowWidth / 2)
 	t.finalPosition[1] = v.Y() / (t.Font.WindowHeight / 2)
@@ -247,9 +238,9 @@ func (t *Text) SetPosition(v mgl32.Vec2) {
 		t.BoundingBox.finalPosition[0] = v.X() / (t.Font.WindowWidth / 2)
 		t.BoundingBox.finalPosition[1] = v.Y() / (t.Font.WindowHeight / 2)
 	}
-	t.Position = v
 }
 
+// DragPosition drags the text along the vector (x,y)
 func (t *Text) DragPosition(x, y float32) {
 	t.Position[0] += x
 	t.Position[1] += y
@@ -257,21 +248,24 @@ func (t *Text) DragPosition(x, y float32) {
 	// transform to orthographic coordinates ranged -1 to 1 for the shader
 	t.finalPosition[0] = t.Position.X() / (t.Font.WindowWidth / 2)
 	t.finalPosition[1] = t.Position.Y() / (t.Font.WindowHeight / 2)
+
 	if gltext.IsDebug {
 		t.BoundingBox.finalPosition[0] = t.Position.X() / (t.Font.WindowWidth / 2)
 		t.BoundingBox.finalPosition[1] = t.Position.Y() / (t.Font.WindowHeight / 2)
 	}
 }
 
-func (t *Text) GetBoundingBox() (X1, X2 gltext.Point) {
+// GetBoundingBox returns the bounding box points
+func (t *Text) GetBoundingBox() (lowerLeft, upperRight gltext.Point) {
 	x, y := t.Position.X(), t.Position.Y()
-	X1.X = t.X1.X + x
-	X1.Y = t.X1.Y + y
-	X2.X = t.X2.X + x
-	X2.Y = t.X2.Y + y
+	lowerLeft.X = t.LowerLeft.X + x
+	lowerLeft.Y = t.LowerLeft.Y + y
+	upperRight.X = t.UpperRight.X + x
+	upperRight.Y = t.UpperRight.Y + y
 	return
 }
 
+// Draw the text
 func (t *Text) Draw() {
 	if gltext.IsDebug {
 		t.BoundingBox.Draw()
@@ -312,6 +306,7 @@ func (t *Text) Draw() {
 	gl.Disable(gl.BLEND)
 }
 
+// BeginFadeOut starts the fadeout process
 func (t *Text) BeginFadeOut() {
 	if t.FadeOutBegun == false {
 		t.FadeOutBegun = true
@@ -319,11 +314,13 @@ func (t *Text) BeginFadeOut() {
 	}
 }
 
+// Show the text
 func (t *Text) Show() {
 	t.FadeOutBegun = false
 	t.FadeOutFrameCount = 0
 }
 
+// Hide the text
 func (t *Text) Hide() {
 	t.FadeOutBegun = false
 	t.FadeOutFrameCount = 1.0 / t.FadeOutPerFrame
@@ -332,63 +329,58 @@ func (t *Text) Hide() {
 // centerTheData prepares the value "centered_position" found in the font shader
 // as named, the function centers the text around the orthographic center of the screen
 // expected to only be called within SetString
-func (t *Text) centerTheData(lowerLeft gltext.Point) (err error) {
+func (t *Text) centerTheData() error {
 	length := len(t.vboData)
 	for index := 0; index < length; {
 		// index (0,0)
-		t.vboData[index] += lowerLeft.X
+		t.vboData[index] += t.LowerLeft.X
 		index++
-		t.vboData[index] += lowerLeft.Y
+		t.vboData[index] += t.LowerLeft.Y
 		index += 3 // skip texture data
 
 		// index (1,0)
-		t.vboData[index] += lowerLeft.X
+		t.vboData[index] += t.LowerLeft.X
 		index++
-		t.vboData[index] += lowerLeft.Y
+		t.vboData[index] += t.LowerLeft.Y
 		index += 3
 
 		// index (1,1)
-		t.vboData[index] += lowerLeft.X
+		t.vboData[index] += t.LowerLeft.X
 		index++
-		t.vboData[index] += lowerLeft.Y
+		t.vboData[index] += t.LowerLeft.Y
 		index += 3
 
 		// index (0,1)
-		t.vboData[index] += lowerLeft.X
+		t.vboData[index] += t.LowerLeft.X
 		index++
-		t.vboData[index] += lowerLeft.Y
+		t.vboData[index] += t.LowerLeft.Y
 		index += 3
 	}
-
-	// lower left
-	t.X1 = gltext.Point{X: 0, Y: 0}
-	t.X1.X += lowerLeft.X
-	t.X1.Y += lowerLeft.Y
-
-	// upper right
-	t.X2 = gltext.Point{X: 0, Y: 0}
-	t.X2.X += -lowerLeft.X
-	t.X2.Y += -lowerLeft.Y
-
 	// prepare objects for drawing the bounding box
 	if gltext.IsDebug {
-		t.BoundingBox, err = loadBoundingBox(t.Font, t.X1, t.X2)
+		var err error
+		t.BoundingBox, err = loadBoundingBox(t.Font, t.LowerLeft, t.UpperRight)
+		if err != nil {
+			return err
+		}
 	}
-	return
+	return nil
 }
 
+// Width of the text
 func (t *Text) Width() float32 {
-	return t.X2.X - t.X1.X
+	return t.UpperRight.X - t.LowerLeft.X
 }
 
+// Height of the text
 func (t *Text) Height() float32 {
-	return t.X2.Y - t.X1.Y
+	return t.UpperRight.Y - t.LowerLeft.Y
 }
 
 // PrintCharSpacing is used for debugging
 func (t *Text) PrintCharSpacing() {
 	fmt.Printf("\n%s:\n", t.String)
-	at := t.X1.X
+	at := t.LowerLeft.X
 	for i, cs := range t.CharSpacing {
 		at = cs + at
 		fmt.Printf("'%c': %.2f ", t.String[i], at)
@@ -402,7 +394,7 @@ func (t *Text) ClickedCharacter(xPos, offset float64) (index int, side Character
 	xPos = xPos - float64(t.Font.WindowWidth/2) - offset
 
 	// could do a binary search...
-	at := float64(t.X1.X)
+	at := float64(t.LowerLeft.X)
 	for i, cs := range t.CharSpacing {
 		at = float64(cs) + at
 		if i == 0 && xPos <= at-float64(cs) {
@@ -414,16 +406,16 @@ func (t *Text) ClickedCharacter(xPos, offset float64) (index int, side Character
 		if xPos <= at && xPos > at-float64(cs) {
 			if xPos-(at-float64(cs)) > float64(cs)/2 {
 				return i, CSRight
-			} else {
-				return i, CSLeft
 			}
+			return i, CSLeft
 		}
 	}
 	return -1, CSUnknown
 }
 
+// CharPosition returns the x position of a character
 func (t *Text) CharPosition(index int) float64 {
-	at := float64(t.X1.X)
+	at := float64(t.LowerLeft.X)
 	for i, cs := range t.CharSpacing {
 		if i == index {
 			break
@@ -433,6 +425,7 @@ func (t *Text) CharPosition(index int) float64 {
 	return at
 }
 
+// HasRune indicates if the rune is available in the current font
 func (t *Text) HasRune(r rune) bool {
 	for _, runes := range t.Font.Config.RuneRanges {
 		if r >= runes.Low && r <= runes.High {
@@ -480,7 +473,7 @@ func (t *Text) makeBufferData(indices []rune) {
 			tP1, tP2 := glyphs[glyphIndex].GetTexturePositions(t.Font)
 
 			// counter-clockwise quad
-			// the bounding box value X2 is being expanded as characters are added
+			// the bounding box's UpperRight value is being updated as characters are added
 
 			// index (0,0)
 			t.vboData[vboIndex] = lineX // position
@@ -492,8 +485,10 @@ func (t *Text) makeBufferData(indices []rune) {
 			t.vboData[vboIndex] = tP2.Y
 			vboIndex++
 
-			// index (1,0) - expanding X2
-			t.vboData[vboIndex], t.X2.X = lineX+vw, lineX+vw-trim
+			// index (1,0)
+			t.UpperRight.X = lineX + vw - trim
+
+			t.vboData[vboIndex] = lineX + vw
 			vboIndex++
 			t.vboData[vboIndex] = 0
 			vboIndex++
@@ -503,9 +498,11 @@ func (t *Text) makeBufferData(indices []rune) {
 			vboIndex++
 
 			// index (1,1) - expanding X2
+			t.UpperRight.Y = vh
+
 			t.vboData[vboIndex] = lineX + vw
 			vboIndex++
-			t.vboData[vboIndex], t.X2.Y = vh, vh
+			t.vboData[vboIndex] = vh
 			vboIndex++
 			t.vboData[vboIndex] = tP2.X
 			vboIndex++
@@ -545,6 +542,15 @@ func (t *Text) makeBufferData(indices []rune) {
 			}
 		}
 	}
+
+	// The block of text is positioned around the center of the screen, which in this case must
+	// be considered (0,0).  This is necessary for orthographic projection and scaling to work
+	// well together.  If the text is *not* at (0,0), then scaling doesnt produce a direct zoom effect.
+	t.LowerLeft.X = -t.UpperRight.X / 2
+	t.LowerLeft.Y = -t.UpperRight.Y / 2
+	t.UpperRight.X = t.UpperRight.X / 2
+	t.UpperRight.Y = t.UpperRight.Y / 2
+
 	if gltext.IsDebug {
 		gltext.PrintVBO(t.vboData, t.Font.GetTextureHeight(), t.Font.GetTextureWidth())
 	}

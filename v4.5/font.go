@@ -11,7 +11,7 @@ import (
 	"image"
 )
 
-var fontVertexShaderSource string = `
+var fontVertexShaderSource = `
 #version 330
 
 uniform mat4 scale_matrix;
@@ -36,7 +36,7 @@ void main() {
 }
 ` + "\x00"
 
-var fontFragmentShaderSource string = `
+var fontFragmentShaderSource = `
 #version 330
 
 uniform sampler2D fragment_texture;
@@ -54,6 +54,7 @@ void main() {
 }
 ` + "\x00"
 
+// Font is used to render text
 type Font struct {
 	Config         *gltext.FontConfig // Character set for this font.
 	textureID      uint32             // Holds the glyph texture id.
@@ -62,7 +63,7 @@ type Font struct {
 	program        uint32             // program compiled from shaders
 
 	// attributes
-	centeredPositionAttribute uint32 // vertex centered_position required for scaling around the orthographic projections center
+	centeredPositionAttribute uint32 // vertex centered_position required for scaling around the center of the screen
 	uvAttribute               uint32 // texture position
 
 	// The final screen position post-scaling
@@ -88,14 +89,17 @@ type Font struct {
 	WindowHeight  float32
 }
 
+// GetTextureWidth returns the width of the texture used to render text
 func (f *Font) GetTextureWidth() float32 {
 	return f.textureWidth
 }
 
+// GetTextureHeight returns the height of the texture used to render text
 func (f *Font) GetTextureHeight() float32 {
 	return f.textureHeight
 }
 
+// NewFont creates a new font using the given font config
 func NewFont(config *gltext.FontConfig) (f *Font, err error) {
 	if config == nil {
 		panic("Nil config")
@@ -166,12 +170,14 @@ func NewFont(config *gltext.FontConfig) (f *Font, err error) {
 	return f, nil
 }
 
+// ResizeWindow updates the window's width/height on resize as well as updating the OrthographicMatrix
 func (f *Font) ResizeWindow(width float32, height float32) {
 	f.WindowWidth = width
 	f.WindowHeight = height
 	f.OrthographicMatrix = mgl32.Ortho2D(-f.WindowWidth/2, f.WindowWidth/2, -f.WindowHeight/2, f.WindowHeight/2)
 }
 
+// Release releases opengl objects
 func (f *Font) Release() {
 	gl.DeleteTextures(1, &f.textureID)
 }

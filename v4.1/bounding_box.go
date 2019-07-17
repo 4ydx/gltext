@@ -11,7 +11,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-var boxVertexShaderSource string = `
+var boxVertexShaderSource = `
 #version 330
 
 uniform mat4 orthographic_matrix;
@@ -25,7 +25,7 @@ void main() {
 }
 ` + "\x00"
 
-var boxFragmentShaderSource string = `
+var boxFragmentShaderSource = `
 #version 330
 
 out vec4 fragment_color;
@@ -35,6 +35,7 @@ void main() {
 }
 ` + "\x00"
 
+// BoundingBox is the GL implementation of the bounding box of an object
 type BoundingBox struct {
 	program uint32 // program compiled from shaders
 
@@ -60,13 +61,9 @@ type BoundingBox struct {
 	vboIndexCount int
 	eboData       []int32
 	eboIndexCount int
-
-	// X1, X2: the lower left and upper right points of a box that bounds the text
-	X1 gltext.Point
-	X2 gltext.Point
 }
 
-func loadBoundingBox(f *Font, X1 gltext.Point, X2 gltext.Point) (b *BoundingBox, err error) {
+func loadBoundingBox(f *Font, lowerLeft gltext.Point, upperRight gltext.Point) (b *BoundingBox, err error) {
 	b = new(BoundingBox)
 	b.font = f
 
@@ -81,11 +78,11 @@ func loadBoundingBox(f *Font, X1 gltext.Point, X2 gltext.Point) (b *BoundingBox,
 	b.eboIndexCount = 6     // each rune requires 6 triangle indices for a quad
 	b.vboData = make([]float32, b.vboIndexCount, b.vboIndexCount)
 	b.eboData = make([]int32, b.eboIndexCount, b.eboIndexCount)
-	b.makeBufferData(X1, X2)
+	b.makeBufferData(lowerLeft, upperRight)
 
 	if gltext.IsDebug {
 		prefix := gltext.DebugPrefix()
-		fmt.Printf("%s bounding %v %v\n", prefix, X1, X2)
+		fmt.Printf("%s bounding %v %v\n", prefix, lowerLeft, upperRight)
 		fmt.Printf("%s bounding vbo data\n%v\n", prefix, b.vboData)
 		fmt.Printf("%s bounding ebo data\n%v\n", prefix, b.eboData)
 	}
@@ -133,12 +130,14 @@ func loadBoundingBox(f *Font, X1 gltext.Point, X2 gltext.Point) (b *BoundingBox,
 	return b, nil
 }
 
+// Release opengl objects
 func (b *BoundingBox) Release() {
 	gl.DeleteBuffers(1, &b.vbo)
 	gl.DeleteBuffers(1, &b.ebo)
 	gl.DeleteBuffers(1, &b.vao)
 }
 
+// Draw the bounding box
 func (b *BoundingBox) Draw() {
 	gl.UseProgram(b.program)
 
@@ -152,24 +151,24 @@ func (b *BoundingBox) Draw() {
 	gl.BindVertexArray(0)
 }
 
-func (b *BoundingBox) makeBufferData(X1, X2 gltext.Point) {
+func (b *BoundingBox) makeBufferData(lowerLeft, upperRight gltext.Point) {
 	// counter-clockwise quad
 
 	// index (0,0)
-	b.vboData[0] = X1.X // position
-	b.vboData[1] = X1.Y
+	b.vboData[0] = lowerLeft.X // position
+	b.vboData[1] = lowerLeft.Y
 
 	// index (1,0)
-	b.vboData[2] = X2.X
-	b.vboData[3] = X1.Y
+	b.vboData[2] = upperRight.X
+	b.vboData[3] = lowerLeft.Y
 
 	// index (1,1)
-	b.vboData[4] = X2.X
-	b.vboData[5] = X2.Y
+	b.vboData[4] = upperRight.X
+	b.vboData[5] = upperRight.Y
 
 	// index (0,1)
-	b.vboData[6] = X1.X
-	b.vboData[7] = X2.Y
+	b.vboData[6] = lowerLeft.X
+	b.vboData[7] = upperRight.Y
 
 	// ebo data
 	b.eboData[0] = 0

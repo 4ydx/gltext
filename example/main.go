@@ -8,8 +8,8 @@ import (
 	//"time"
 
 	"github.com/4ydx/gltext"
-	"github.com/4ydx/gltext/v4.5"
-	"github.com/go-gl/gl/v4.5-core/gl"
+	"github.com/4ydx/gltext/v4.1"
+	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/image/math/fixed"
@@ -46,12 +46,12 @@ func main() {
 	fmt.Println("Opengl version", version)
 
 	// code from here
-	gltext.IsDebug = true
+	gltext.IsDebug = false
 
-	var font *v45.Font
+	var font *v41.Font
 	config, err := gltext.LoadTruetypeFontConfig("fontconfigs", "luxirr")
 	if err == nil {
-		font, err = v45.NewFont(config)
+		font, err = v41.NewFont(config)
 		if err != nil {
 			panic(err)
 		}
@@ -83,7 +83,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		font, err = v45.NewFont(config)
+		font, err = v41.NewFont(config)
 		if err != nil {
 			panic(err)
 		}
@@ -100,9 +100,9 @@ func main() {
 	scaleMin, scaleMax := float32(1.0), float32(1.1)
 	//strs := []string{str0, str1, str2, str3}
 	strs := []string{str0, str1, str2}
-	txts := []*v45.Text{}
+	txts := []*v41.Text{}
 	for _, str := range strs {
-		text := v45.NewText(font, scaleMin, scaleMax)
+		text := v41.NewText(font, scaleMin, scaleMax)
 		text.SetString(str)
 		text.SetColor(mgl32.Vec3{1, 1, 1})
 		text.FadeOutPerFrame = 0.01
@@ -118,7 +118,7 @@ func main() {
 
 	gl.ClearColor(0.4, 0.4, 0.4, 0.0)
 	for index, text := range txts {
-		text.SetPosition(mgl32.Vec2{100, float32(index * 50)})
+		text.SetPosition(mgl32.Vec2{0, float32(index * 50)})
 	}
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)

@@ -5,12 +5,13 @@
 package v41
 
 import (
-	"errors"
 	"fmt"
-	"github.com/go-gl/gl/v4.1-core/gl"
 	"strings"
+
+	"github.com/go-gl/gl/v4.1-core/gl"
 )
 
+// NewProgram generates an opengl shader from the given source
 func NewProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
 	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
 	if err != nil {
@@ -38,7 +39,7 @@ func NewProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error)
 		gl.DeleteShader(vertexShader)
 		gl.DeleteShader(fragmentShader)
 
-		return 0, errors.New(fmt.Sprintf("failed to link program: %v", log))
+		return 0, fmt.Errorf("failed to link program: %v", log)
 	}
 	gl.DetachShader(program, vertexShader)
 	gl.DetachShader(program, fragmentShader)
