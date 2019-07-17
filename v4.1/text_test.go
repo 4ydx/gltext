@@ -64,8 +64,8 @@ func TestClickedCharacter(t *testing.T) {
 
 func TestBoundingBox(t *testing.T) {
 	text := &Text{}
-	text.X1 = gltext.Point{-10, -10}
-	text.X2 = gltext.Point{+10, +10}
+	text.X1 = gltext.Point{X: -10, Y: -10}
+	text.X2 = gltext.Point{X: +10, Y: +10}
 	text.Font = &Font{}
 	v := mgl32.Vec2{10, 5}
 	text.SetPosition(v)

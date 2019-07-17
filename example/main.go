@@ -8,10 +8,10 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/image/math/fixed"
-	"math"
+	//"math"
 	"os"
 	"runtime"
-	"time"
+	//"time"
 )
 
 var useStrictCoreProfile = (runtime.GOOS == "darwin")
@@ -48,7 +48,7 @@ func main() {
 	gltext.IsDebug = true
 
 	var font *v41.Font
-	config, err := gltext.LoadTruetypeFontConfig("fontconfigs", "font_1_honokamin")
+	config, err := gltext.LoadTruetypeFontConfig("fontconfigs", "luxirr")
 	if err == nil {
 		font, err = v41.NewFont(config)
 		if err != nil {
@@ -56,7 +56,7 @@ func main() {
 		}
 		fmt.Println("Font loaded from disk...")
 	} else {
-		fd, err := os.Open("font/font_1_honokamin.ttf")
+		fd, err := os.Open("font/luxirr.ttf")
 		if err != nil {
 			panic(err)
 		}
@@ -66,19 +66,19 @@ func main() {
 		// http://www.rikai.com/library/kanjitables/kanji_codes.unicode.shtml
 		runeRanges := make(gltext.RuneRanges, 0)
 		runeRanges = append(runeRanges, gltext.RuneRange{Low: 32, High: 128})
-		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x3000, High: 0x3030})
-		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x3040, High: 0x309f})
-		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x30a0, High: 0x30ff})
-		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x4e00, High: 0x9faf})
-		runeRanges = append(runeRanges, gltext.RuneRange{Low: 0xff00, High: 0xffef})
+		//runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x3000, High: 0x3030})
+		//runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x3040, High: 0x309f})
+		//runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x30a0, High: 0x30ff})
+		//runeRanges = append(runeRanges, gltext.RuneRange{Low: 0x4e00, High: 0x9faf})
+		//runeRanges = append(runeRanges, gltext.RuneRange{Low: 0xff00, High: 0xffef})
 
 		scale := fixed.Int26_6(32)
-		runesPerRow := fixed.Int26_6(128)
+		runesPerRow := fixed.Int26_6(20)
 		config, err = gltext.NewTruetypeFontConfig(fd, scale, runeRanges, runesPerRow, 5)
 		if err != nil {
 			panic(err)
 		}
-		err = config.Save("fontconfigs", "font_1_honokamin")
+		err = config.Save("fontconfigs", "luxirr")
 		if err != nil {
 			panic(err)
 		}
@@ -94,10 +94,11 @@ func main() {
 	str0 := "! \" # $ ' ( ) + , - . / 0123456789 : "
 	str1 := "; <=> ? @ ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	str2 := "[^_`] abcdefghijklmnopqrstuvwxyz {|}"
-	str3 := "大好きどなにｂｃｄｆｇｈｊｋｌｍｎｐｑ"
+	// str3 := "大好きどなにｂｃｄｆｇｈｊｋｌｍｎｐｑ"
 
 	scaleMin, scaleMax := float32(1.0), float32(1.1)
-	strs := []string{str0, str1, str2, str3}
+	//strs := []string{str0, str1, str2, str3}
+	strs := []string{str0, str1, str2}
 	txts := []*v41.Text{}
 	for _, str := range strs {
 		text := v41.NewText(font, scaleMin, scaleMax)
@@ -112,34 +113,40 @@ func main() {
 		txts = append(txts, text)
 	}
 
-	start := time.Now()
+	//start := time.Now()
 
 	gl.ClearColor(0.4, 0.4, 0.4, 0.0)
+	for index, text := range txts {
+		text.SetPosition(mgl32.Vec2{100, float32(index * 50)})
+	}
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		// Position can be set freely
-		for index, text := range txts {
-			text.SetPosition(mgl32.Vec2{0, float32(index * 50)})
+		for _, text := range txts {
 			text.Draw()
+			text.DragPosition(1, 0)
+			//text.SetPosition(mgl32.Vec2{float32(at), float32(index * 50)})
 
 			// just for illustrative purposes
 			// i imagine that user interaction of some sort will trigger these rather than a moment in time
 
-			// fade out
-			if math.Floor(time.Now().Sub(start).Seconds()) == 5 {
-				text.BeginFadeOut()
-			}
+			/*
+				// fade out
+				if math.Floor(time.Now().Sub(start).Seconds()) == 5 {
+					text.BeginFadeOut()
+				}
 
-			// show text
-			if math.Floor(time.Now().Sub(start).Seconds()) == 10 {
-				text.Show()
-			}
+				// show text
+				if math.Floor(time.Now().Sub(start).Seconds()) == 10 {
+					text.Show()
+				}
 
-			// hide
-			if math.Floor(time.Now().Sub(start).Seconds()) == 15 {
-				text.Hide()
-			}
+				// hide
+				if math.Floor(time.Now().Sub(start).Seconds()) == 15 {
+					text.Hide()
+				}
+			*/
 		}
 
 		window.SwapBuffers()
