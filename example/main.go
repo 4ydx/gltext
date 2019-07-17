@@ -5,7 +5,7 @@ import (
 	"github.com/4ydx/gltext"
 	"github.com/4ydx/gltext/v4.1"
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"golang.org/x/image/math/fixed"
 	"math"
@@ -19,8 +19,7 @@ var useStrictCoreProfile = (runtime.GOOS == "darwin")
 func main() {
 	runtime.LockOSThread()
 
-	err := glfw.Init()
-	if err != nil {
+	if err := glfw.Init(); err != nil {
 		panic("glfw error")
 	}
 	defer glfw.Terminate()
@@ -35,7 +34,7 @@ func main() {
 	glfw.WindowHint(glfw.OpenGLDebugContext, glfw.True)
 
 	window, err := glfw.CreateWindow(1280, 960, "Testing", nil, nil)
-	if err != nil {
+	if err := gl.Init(); err != nil {
 		panic(err)
 	}
 	window.MakeContextCurrent()
