@@ -48,12 +48,10 @@ func (fc *FontConfig) Load(rootPath string) (err error) {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%+v\n", time.Now())
 	fc.Image, err = LoadFontImage(rootPath, fc.Name)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%+v\n", time.Now())
 	fc.Glyphs.Scale(1)
 	return nil
 }
